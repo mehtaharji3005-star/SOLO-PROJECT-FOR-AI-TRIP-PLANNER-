@@ -1,202 +1,132 @@
-import os
-import requests
-import streamlit as st
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
+import json
+from typing import List
+from pydantic import BaseModel, Field
+from crewai import Agent, Task, Crew, Process
+from langchain_openai import ChatOpenAI
 
-# App Layout & Configuration
-st.set_page_config(page_title="AI Trip Planner", page_icon="✈️", layout="wide")
+# -------------------------------------------------------------------
+# 1. Define Structured Pydantic Output Models
+# -------------------------------------------------------------------
+class Activity(BaseModel):
+    time_slot: str = Field(description="Morning, Afternoon, or Evening block (e.g., 09:00 AM - 11:30 AM)")
+    place_name: str = Field(description="Name of the attraction or restaurant")
+    category: str = Field(description="Historical, Food, Nature, Shopping, Relaxation, etc.")
+    description: str = Field(description="Short summary of what to do here")
+    estimated_cost_usd: float = Field(description="Estimated cost in USD per person")
 
-# Display background banner image
-st.image("bg.png", use_container_width=True)
+class DayPlan(BaseModel):
+    day_number: int = Field(description="Day number of the trip (1, 2, 3...)")
+    theme: str = Field(description="Theme for the day (e.g., Historic Downtown Exploration)")
+    activities: List[Activity] = Field(description="List of ordered daily activities")
+    daily_budget_usd: float = Field(description="Total estimated budget for this day")
 
-st.sidebar.title("API Configuration")
-st.title("AI TRIP PLANNER ✈️ 🚗")
+class TripItinerary(BaseModel):
+    destination: str = Field(description="Target city or region")
+    total_days: int = Field(description="Duration of the trip")
+    travel_style: str = Field(description="Budget, Luxury, Adventure, Relaxed, Family")
+    overall_budget_usd: float = Field(description="Total estimated trip cost")
+    packing_tips: List[str] = Field(description="Essential items to pack")
+    days: List[DayPlan] = Field(description="Day-by-day plan")
 
-# Sidebar - API Keys setup
-st.sidebar.subheader("Provide Required API Keys")
+# -------------------------------------------------------------------
+# 2. Initialize LLM
+# -------------------------------------------------------------------
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
 
-GOOGLE_API_KEY = st.sidebar.text_input("GOOGLE_API_KEY", type="password")
-os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+# -------------------------------------------------------------------
+# 3. Define Specialized Agents
+# -------------------------------------------------------------------
+researcher = Agent(
+    role="Destination Researcher",
+    goal="Find top-rated local hidden gems, iconic landmarks, and dining options for {destination}.",
+    backstory="You are a seasoned travel guide who knows every city's culture, food scene, and weather quirks.",
+    verbose=True,
+    llm=llm
+)
 
-TAVILY_API_KEY = st.sidebar.text_input("TAVILY_API_KEY", type="password")
-os.environ["TAVILY_API_KEY"] = TAVILY_API_KEY
+logistics_expert = Agent(
+    role="Logistics & Route Optimizer",
+    goal="Cluster attractions geographically to ensure efficient routing and accurate time budgets.",
+    backstory="An expert tour coordinator who ensures travelers spend time enjoying destinations rather than stuck in traffic.",
+    verbose=True,
+    llm=llm
+)
 
-OPENWEATHER_API_KEY = st.sidebar.text_input("OPENWEATHER_API_KEY", type="password")
-os.environ["OPENWEATHER_API_KEY"] = OPENWEATHER_API_KEY
+concierge = Agent(
+    role="Lead Travel Concierge",
+    goal="Synthesize research and route logistics into a cohesive, structured JSON travel plan.",
+    backstory="A luxury concierge known for creating seamless, tailored day-by-day itineraries.",
+    verbose=True,
+    llm=llm
+)
 
-GOOGLE_PLACES_API_KEY = st.sidebar.text_input("GOOGLE_PLACES_API_KEY", type="password")
-os.environ["GOOGLE_PLACES_API_KEY"] = GOOGLE_PLACES_API_KEY
+# -------------------------------------------------------------------
+# 4. Define Agent Tasks
+# -------------------------------------------------------------------
+research_task = Task(
+    description=(
+        "Research the destination '{destination}' for a {days}-day trip. "
+        "Style: {travel_style}. Focus areas: {interests}."
+    ),
+    expected_output="A comprehensive list of top attractions, local spots, and meal recommendations.",
+    agent=researcher
+)
 
-all_API = [
-    OPENWEATHER_API_KEY,
-    TAVILY_API_KEY,
-    GOOGLE_API_KEY,
-    GOOGLE_PLACES_API_KEY,
-]
+logistics_task = Task(
+    description=(
+        "Take the researched spots for {destination} and organize them into {days} daily schedules. "
+        "Group nearby places together to eliminate unnecessary transit. "
+        "Ensure realistic time windows (e.g., Morning, Afternoon, Evening)."
+    ),
+    expected_output="A logically ordered, daily clustered itinerary draft with estimated costs.",
+    agent=logistics_expert,
+    context=[research_task]
+)
 
-if not all(all_API):
-    st.error("❌ Please provide all API keys in the sidebar to proceed.")
-    st.stop()
-else:
-    st.sidebar.success("✅ All API keys loaded successfully.")
+itinerary_task = Task(
+    description=(
+        "Convert the finalized daily schedule into the strictly structured format matching TripItinerary. "
+        "Calculate accurate overall budget totals and include 3-4 specific packing tips."
+    ),
+    expected_output="A validated structured Pydantic object representing the full travel itinerary.",
+    agent=concierge,
+    context=[logistics_task],
+    output_pydantic=TripItinerary
+)
 
-# Main Form Inputs
-st.header("Trip Details")
-col1, col2 = st.columns(2)
-
-with col1:
-    name = st.text_input("Your Name")
-    source = st.text_input("Source City")
-    destination = st.text_input("Destination City")
-    travel_date = st.date_input("Travel Date")
-    return_date = st.date_input("Return Date")
-    days = st.number_input("Number of Days", min_value=1, value=5)
-    travelers = st.number_input("Number of Travelers", min_value=1, value=2)
-
-with col2:
-    budget = st.text_input("Budget (with currency)", placeholder="e.g., $2000 USD, ₹50,000 INR")
-
-    # Single Selection (Drop-down)
-    travel_style = st.selectbox(
-        "Travel Style", 
-        ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"]
+# -------------------------------------------------------------------
+# 5. Execution Function
+# -------------------------------------------------------------------
+def generate_ai_trip(destination: str, days: int, travel_style: str, interests: str):
+    trip_crew = Crew(
+        agents=[researcher, logistics_expert, concierge],
+        tasks=[research_task, logistics_task, itinerary_task],
+        process=Process.sequential
     )
 
-    hotel_type = st.selectbox(
-        "Hotel Preference", 
-        ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"]
+    result = trip_crew.kickoff(
+        inputs={
+            "destination": destination,
+            "days": days,
+            "travel_style": travel_style,
+            "interests": interests
+        }
     )
+    
+    return result
 
-    transport = st.selectbox(
-        "Transport Preference", 
-        ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"]
-    )    
-
-    # Text input for custom dietary preferences
-    food = st.text_input("Food Preference", placeholder="e.g., Vegetarian, Vegan, Halal, Local Cuisine")
-
-    # Multi-Selection Widgets
-    interests = st.multiselect(
-        "Interests", 
-        ["Museums", "Architecture", "Photography", "Food & Dining", "Nature & Hiking", "Shopping", "Nightlife", "History"],
-        default=["Museums", "Architecture"]
+# -------------------------------------------------------------------
+# 6. Run Example
+# -------------------------------------------------------------------
+if __name__ == "__main__":
+    plan = generate_ai_trip(
+        destination="Kyoto, Japan",
+        days=2,
+        travel_style="Cultural & Foodie (Mid-range Budget)",
+        interests="Ancient temples, street food, traditional tea, bamboo forests"
     )
-
-    must_visit = st.multiselect(
-        "Must Visit Places", 
-        ["Eiffel Tower", "Louvre Museum", "Colosseum", "Taj Mahal", "Statue of Liberty", "Central Park", "Custom Spot"],
-        default=["Eiffel Tower"]
-    )
-
-    special = st.multiselect(
-        "Special Requirements", 
-        ["Wheelchair accessibility", "Quiet nights", "Pet friendly", "Kid friendly", "Senior friendly"],
-        default=["Wheelchair accessibility"]
-    )
-
-# LangChain Prompt Template
-trip_prompt = ChatPromptTemplate.from_template("""
-You are an advanced AI Travel Planner and professional tour consultant. Generate a complete, personalized, realistic, and optimized travel itinerary based on the user's inputs.
-
-User Details:
-- Name: {name}
-- Source: {source}
-- Destination: {destination}
-- Departure Date: {travel_date}
-- Return Date: {return_date}
-- Duration: {days} Days
-- Travelers: {travelers}
-- Budget: {budget}
-- Travel Style: {travel_style}
-- Hotel Category: {hotel_type}
-- Transportation Preference: {transport}
-- Food Preference: {food}
-- Interests: {interests}
-- Must Visit Places: {must_visit}
-- Special Requirements: {special}
-
-Generate:
-- Day-wise itinerary (Day 1 to Last Day) with Morning, Afternoon, Evening, and Night schedules
-- Top attractions and hidden gems
-- Estimated travel time between locations
-- Hotel and Restaurant recommendations
-- Daily and total cost breakdown
-- Packing checklist & Weather advice
-- Safety tips and local customs
-- Emergency contacts and nearby hospitals
-
-Present the final itinerary using clean markdown headings, bullet points, and tables.
-""")
-
-if st.button("🚀 Generate Itinerary"):
-    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith("AQ."):
-        st.error("❌ Invalid GOOGLE_API_KEY. Please provide a valid key starting with 'AIza' from Google AI Studio.")
-        st.stop()
-        
-    with st.spinner("Crafting your personalized trip itinerary..."):
-        try:
-            # Explicitly pass api_key and set vertexai=False
-            model = ChatGoogleGenerativeAI(
-                model="gemini-3.5-flash",
-                google_api_key=GOOGLE_API_KEY,
-                vertexai=False
-            )
-            
-            trip_chain = trip_prompt | model | StrOutputParser()
-            
-            trip_plan = trip_chain.invoke({
-                "name": name,
-                "source": source,
-                "destination": destination,
-                "travel_date": str(travel_date),
-                "return_date": str(return_date),
-                "days": str(days),
-                "budget": budget,
-                "travelers": str(travelers),
-                "travel_style": travel_style,
-                "hotel_type": hotel_type,
-                "transport": transport,
-                "food": food,
-                "interests": ", ".join(interests),
-                "must_visit": ", ".join(must_visit),
-                "special": ", ".join(special)
-            })
-
-            st.markdown(trip_plan)
-
-            # File Saving
-            filename_txt = f"{name}_Trip_Plan.txt"
-            with open(filename_txt, "w", encoding="utf-8") as f:
-                f.write(trip_plan)
-
-            # PDF Generation
-            filename_pdf = f"{name}_Trip_Plan.pdf"
-            doc = SimpleDocTemplate(filename_pdf)
-            styles = getSampleStyleSheet()
-            story = [Paragraph(trip_plan.replace("\n", "<br/>"), styles["BodyText"])]
-            doc.build(story)
-
-            st.success(f"Trip plan saved locally as {filename_txt} and {filename_pdf}!")
-
-            # Streamlit Download Buttons
-            st.download_button(
-                label="📥 Download Itinerary (TXT)",
-                data=trip_plan,
-                file_name=filename_txt,
-                mime="text/plain"
-            )
-            
-            with open(filename_pdf, "rb") as pdf_file:
-                st.download_button(
-                    label="📥 Download Itinerary (PDF)",
-                    data=pdf_file,
-                    file_name=filename_pdf,
-                    mime="application/pdf"
-                )
-
-        except Exception as e:
-            st.error(f"An error occurred while generating the itinerary: {e}")
+    
+    # Access structured output directly
+    itinerary_data: TripItinerary = plan.pydantic
+    print("\n================ GENERATED ITINERARY ================")
+    print(json.dumps(itinerary_data.model_dump(), indent=2))
