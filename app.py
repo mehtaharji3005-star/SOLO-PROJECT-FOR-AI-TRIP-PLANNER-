@@ -11,7 +11,7 @@ print("Module Loaded Successfully ji")
 st.sidebar.title("SET API CONFIG")
 st.title("AI TRIP PLANNER ✈️ 🚗 ")
 
-st.image("AI TRIP.png")
+st.image("bg.png")
 
 st.sidebar.title("fill important detailed which we required")
 st.sidebar.image("bg.png")
