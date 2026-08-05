@@ -55,14 +55,45 @@ with col1:
     travelers = st.number_input("Number of Travelers", min_value=1, value=2)
 
 with col2:
-    budget = st.text_input("Budget (with currency)")
-    travel_style = st.selectbox("Travel Style", ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"])
-    hotel_type = st.selectbox("Hotel Preference", ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"])
-    transport = st.selectbox("Transport Preference", ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"])
-    food = st.text_input("Food Preference", ["Vegetarian"," Local Cuisine"])
-    interests = st.text_input("Interests", ["Museums", "Architecture", "Photography", "Food"])
-    must_visit = st.text_input("Must Visit Places", ["Eiffel Tower", "Louvre Museum"])
-    special = st.text_input("Special Requirements", ["Wheelchair accessibility", "quiet nights"])
+    budget = st.text_input("Budget (with currency)", placeholder="e.g., $2000 USD, ₹50,000 INR")
+
+    # Single Selection (Drop-down)
+    travel_style = st.selectbox(
+    "Travel Style", 
+    ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"]
+    )
+
+    hotel_type = st.selectbox(
+    "Hotel Preference", 
+    ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"]
+    )
+
+    transport = st.selectbox(
+    "Transport Preference", 
+    ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"]
+    )    
+
+    # Text input for custom dietary preferences
+    food = st.text_input("Food Preference", placeholder="e.g., Vegetarian, Vegan, Halal, Local Cuisine")
+
+    # Multi-Selection Widgets (Allows picking multiple options from a list)
+    interests = st.multiselect(
+    "Interests", 
+    ["Museums", "Architecture", "Photography", "Food & Dining", "Nature & Hiking", "Shopping", "Nightlife", "History"],
+    default=["Museums", "Architecture"]
+    )
+
+    must_visit = st.multiselect(
+    "Must Visit Places", 
+    ["Eiffel Tower", "Louvre Museum", "Colosseum", "Taj Mahal", "Statue of Liberty", "Central Park", "Custom Spot"],
+    default=["Eiffel Tower"]
+    )
+
+    special = st.multiselect(
+    "Special Requirements", 
+    ["Wheelchair accessibility", "Quiet nights", "Pet friendly", "Kid friendly", "Senior friendly"],
+    default=["Wheelchair accessibility"]
+    )
 
 # LangChain Prompt Template
 trip_prompt = ChatPromptTemplate.from_template("""
