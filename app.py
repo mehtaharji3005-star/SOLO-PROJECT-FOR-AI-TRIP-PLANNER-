@@ -1,216 +1,162 @@
 import os
 import requests
-from IPython.display import Markdown, display
+import streamlit as st
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-import streamlit as st
-print("Module Loaded Successfully ji")
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
 
+# App Layout & Configuration
+st.set_page_config(page_title="AI Trip Planner", page_icon="✈️", layout="wide")
 
-st.sidebar.title("SET API CONFIG")
-st.title("AI TRIP PLANNER ✈️ 🚗 ")
+st.sidebar.title("API Configuration")
+st.title("AI TRIP PLANNER ✈️ 🚗")
 
-st.image("bg.png")
+# Sidebar - API Keys setup
+st.sidebar.subheader("Provide Required API Keys")
 
-st.sidebar.title("fill important detailed which we required")
-st.sidebar.image("bg.png")
-
-
-import os
-GOOGLE_API_KEY = st.sidebar.text_input("GOOGLE_API_KEY",type = "password")
+GOOGLE_API_KEY = st.sidebar.text_input("GOOGLE_API_KEY", type="password")
 os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
-TAVILY_API_KEY = st.sidebat.text_input("TAVILY_API_KEY",type = "password")
+
+TAVILY_API_KEY = st.sidebar.text_input("TAVILY_API_KEY", type="password")
 os.environ["TAVILY_API_KEY"] = TAVILY_API_KEY
-OPENWEATHER_API_KEY = st.sidebat.text_input("OPENWEATHER_API_KEY",type = "password")
-os.environ["OPENWEATHER_API_KEY"] = OPENWHEATHER_API_KEY
-GOOGLE_PLACES_API_KEY= st.sidebat.text_input("GOOGLE_PLACES_API_KEY",type = "password")
+
+OPENWEATHER_API_KEY = st.sidebar.text_input("OPENWEATHER_API_KEY", type="password")
+os.environ["OPENWEATHER_API_KEY"] = OPENWEATHER_API_KEY
+
+GOOGLE_PLACES_API_KEY = st.sidebar.text_input("GOOGLE_PLACES_API_KEY", type="password")
 os.environ["GOOGLE_PLACES_API_KEY"] = GOOGLE_PLACES_API_KEY
-print("Done Paji")
-
-if GOOGLE_API_KEY:
-  st.sidebar.success("API key Loaded!!")
-else:
-  st.sidebar.info("Give API key")
-
-if TAVILY_API_KEY:
-    st.sidebar.success("API key Loaded!!")
-else:
-    st.sidebar.info("Give API key")
-
-if OPENWEATHER_API_KEY:
-    st.sidebar.success("API key Loaded!!")
-else:
-    st.sidebar.info("Give API key")
-
-if GOOGLE_PLACES_API_KEY:
-    st.sidebar.success("API key Loaded!!")
-else:
-    st.sidebar.info("Give API key")
 
 all_API = [
     OPENWEATHER_API_KEY,
     TAVILY_API_KEY,
     GOOGLE_API_KEY,
-    GOOGLE_PLACES_API_KEY
+    GOOGLE_PLACES_API_KEY,
 ]
 
 if not all(all_API):
-    st.error("❌ Please provide all API keys.")
+    st.error("❌ Please provide all API keys in the sidebar to proceed.")
     st.stop()
 else:
-    st.success("✅ All API keys loaded successfully.")
+    st.sidebar.success("✅ All API keys loaded successfully.")
 
+# Main Form Inputs
+st.header("Trip Details")
+col1, col2 = st.columns(2)
 
-model = ChatGoogleGenerativeAI(
-    model = "gemini-3.5-flash-lite",
-    google_api_key = os.environ["GOOGLE_API_KEY"]
-)
-response=model.invoke("hello buddy")
-print(response.content)
+with col1:
+    name = st.text_input("Your Name", "John Doe")
+    source = st.text_input("Source City", "New York")
+    destination = st.text_input("Destination City", "Paris")
+    travel_date = st.date_input("Travel Date")
+    return_date = st.date_input("Return Date")
+    days = st.number_input("Number of Days", min_value=1, value=5)
+    travelers = st.number_input("Number of Travelers", min_value=1, value=2)
 
+with col2:
+    budget = st.text_input("Budget (with currency)", "$2000 USD")
+    travel_style = st.selectbox("Travel Style", ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"])
+    hotel_type = st.selectbox("Hotel Preference", ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"])
+    transport = st.selectbox("Transport Preference", ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"])
+    food = st.text_input("Food Preference", "Vegetarian / Local Cuisine")
+    interests = st.text_input("Interests", "Museums, Architecture, Photography, Food")
+    must_visit = st.text_input("Must Visit Places", "Eiffel Tower, Louvre Museum")
+    special = st.text_input("Special Requirements", "Wheelchair accessibility, quiet nights")
 
-
+# LangChain Prompt Template
 trip_prompt = ChatPromptTemplate.from_template("""
 You are an advanced AI Travel Planner and professional tour consultant. Generate a complete, personalized, realistic, and optimized travel itinerary based on the user's inputs.
 
-Collect the following information:
-- Name
-- Source
-- Destination
-- Departure Date
-- Return Date
-- Number of Days
-- Number of Travelers
-- Adults, Children, Seniors
-- Budget
-- Currency
-- Travel Style
-- Hotel Category
-- Transportation Preference
-- Food Preference
-- Interests
-- Activity Level
-- Special Requirements
-- Languages Spoken
-- Passport/Visa Status (if international)
-- Weather Preference
-- Maximum Daily Budget
-- Medical Conditions
-- Check-in Time
-- Check-out Time
-- Places to Avoid
-
-Plan the trip by considering:
-- Current season and weather
-- Best time to visit attractions
-- Opening and closing hours
-- Travel distance and duration
-- Traffic conditions where possible
-- User budget and preferences
+User Details:
+- Name: {name}
+- Source: {source}
+- Destination: {destination}
+- Departure Date: {travel_date}
+- Return Date: {return_date}
+- Duration: {days} Days
+- Travelers: {travelers}
+- Budget: {budget}
+- Travel Style: {travel_style}
+- Hotel Category: {hotel_type}
+- Transportation Preference: {transport}
+- Food Preference: {food}
+- Interests: {interests}
+- Must Visit Places: {must_visit}
+- Special Requirements: {special}
 
 Generate:
-- Day-wise itinerary (Day 1 to Last Day)
-- Morning, Afternoon, Evening, and Night schedule
+- Day-wise itinerary (Day 1 to Last Day) with Morning, Afternoon, Evening, and Night schedules
 - Top attractions and hidden gems
 - Estimated travel time between locations
-- Best transport for each route
-- Hotel recommendations
-- Restaurant recommendations
-- Local food suggestions
+- Hotel and Restaurant recommendations
 - Daily and total cost breakdown
-- Packing checklist
-- Weather advice
-- Safety tips
-- Local customs and etiquette
-- Useful local phrases (if international)
-- Shopping markets and souvenirs
-- Nearby attractions for extra time
+- Packing checklist & Weather advice
+- Safety tips and local customs
 - Emergency contacts and nearby hospitals
-- Google Maps route order
-- Walking distances where applicable
-- Top 10 must-visit places with ratings
-- Money-saving tips
 
-Present the final itinerary in a clean, professional format using headings, tables, bullet points, emojis, and a trip summary with the total estimated budget, travel distance, and personalized recommendations.
+Present the final itinerary using clean markdown headings, bullet points, and tables.
 """)
 
-trip_chain = (
-    trip_prompt
-    | model
-    | StrOutputParser()
+if st.button("🚀 Generate Itinerary"):
+    with st.spinner("Crafting your personalized trip itinerary..."):
+        try:
+            model = ChatGoogleGenerativeAI(
+                model="gemini-2.5-flash",
+                google_api_key=GOOGLE_API_KEY
+            )
+            
+            trip_chain = trip_prompt | model | StrOutputParser()
+            
+            trip_plan = trip_chain.invoke({
+                "name": name,
+                "source": source,
+                "destination": destination,
+                "travel_date": str(travel_date),
+                "return_date": str(return_date),
+                "days": str(days),
+                "budget": budget,
+                "travelers": str(travelers),
+                "travel_style": travel_style,
+                "hotel_type": hotel_type,
+                "transport": transport,
+                "food": food,
+                "interests": interests,
+                "must_visit": must_visit,
+                "special": special
+            })
 
-)
-name = input("Name : ")
-source = input("Source City : ")
-destination = input("Destination : ")
-travel_date = input("Travel Date : ")
-return_date = input("Return Date : ")
-days = input("Trip Days : ")
-budget = input("Budget : ")
-travelers = input("Number of Travelers : ")
-travel_style = input("Travel Style : ")
-hotel_type = input("Hotel Preference : ")
-transport = input("Transport : ")
-food = input("Food Preference : ")
-interests = input("Interests : ")
-must_visit = input("Must Visit Places : ")
-special = input("Special Requirements : ")
+            st.markdown(trip_plan)
 
+            # File Saving
+            filename_txt = f"{name}_Trip_Plan.txt"
+            with open(filename_txt, "w", encoding="utf-8") as f:
+                f.write(trip_plan)
 
-trip_plan = trip_chain.invoke({
+            # PDF Generation
+            filename_pdf = f"{name}_Trip_Plan.pdf"
+            doc = SimpleDocTemplate(filename_pdf)
+            styles = getSampleStyleSheet()
+            story = [Paragraph(trip_plan.replace("\n", "<br/>"), styles["BodyText"])]
+            doc.build(story)
 
-    "name": name,
+            st.success(f"Trip plan saved locally as {filename_txt} and {filename_pdf}!")
 
-    "source": source,
+            # Streamlit Download Buttons
+            st.download_button(
+                label="📥 Download Itinerary (TXT)",
+                data=trip_plan,
+                file_name=filename_txt,
+                mime="text/plain"
+            )
+            
+            with open(filename_pdf, "rb") as pdf_file:
+                st.download_button(
+                    label="📥 Download Itinerary (PDF)",
+                    data=pdf_file,
+                    file_name=filename_pdf,
+                    mime="application/pdf"
+                )
 
-    "destination": destination,
-
-    "travel_date": travel_date,
-
-    "return_date": return_date,
-
-    "days": days,
-
-    "budget": budget,
-
-    "travelers": travelers,
-
-    "travel_style": travel_style,
-
-    "hotel_type": hotel_type,
-
-    "transport": transport,
-
-    "food": food,
-
-    "interests": interests,
-
-    "must_visit": must_visit,
-
-    "special": special
-
-})
-
-display(Markdown(trip_plan))
-
-filename = f"{name}_Trip_Plan.txt"
-
-with open(filename, "w", encoding="utf-8") as f:
-
-    f.write(trip_plan)
-
-print("Trip plan saved successfully.")
-
-from reportlab.platypus import SimpleDocTemplate, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-
-doc = SimpleDocTemplate(f"{name}_Trip_Plan.pdf")
-
-styles = getSampleStyleSheet()
-
-story = [Paragraph(trip_plan.replace("\n", "<br/>"), styles["BodyText"])]
-
-doc.build(story)
-
-print("PDF Saved Successfully")
+        except Exception as e:
+            st.error(f"An error occurred while generating the itinerary: {e}")
