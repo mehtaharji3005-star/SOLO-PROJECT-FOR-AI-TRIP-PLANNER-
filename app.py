@@ -46,9 +46,9 @@ st.header("Trip Details")
 col1, col2 = st.columns(2)
 
 with col1:
-    name = st.text_input("Your Name")
-    source = st.text_input("Source City")
-    destination = st.text_input("Destination City")
+    name = st.text_input("Your Name", "Harji")
+    source = st.text_input("Source City", "Delhi")
+    destination = st.text_input("Destination City", "Goa")
     travel_date = st.date_input("Travel Date")
     return_date = st.date_input("Return Date")
     days = st.number_input("Number of Days", min_value=1, value=5)
@@ -59,40 +59,40 @@ with col2:
 
     # Single Selection (Drop-down)
     travel_style = st.selectbox(
-    "Travel Style", 
-    ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"]
+        "Travel Style", 
+        ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"]
     )
 
     hotel_type = st.selectbox(
-    "Hotel Preference", 
-    ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"]
+        "Hotel Preference", 
+        ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"]
     )
 
     transport = st.selectbox(
-    "Transport Preference", 
-    ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"]
+        "Transport Preference", 
+        ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"]
     )    
 
     # Text input for custom dietary preferences
     food = st.text_input("Food Preference", placeholder="e.g., Vegetarian, Vegan, Halal, Local Cuisine")
 
-    # Multi-Selection Widgets (Allows picking multiple options from a list)
+    # Multi-Selection Widgets
     interests = st.multiselect(
-    "Interests", 
-    ["Museums", "Architecture", "Photography", "Food & Dining", "Nature & Hiking", "Shopping", "Nightlife", "History"],
-    default=["Museums", "Architecture"]
+        "Interests", 
+        ["Museums", "Architecture", "Photography", "Food & Dining", "Nature & Hiking", "Shopping", "Nightlife", "History"],
+        default=["Museums", "Architecture"]
     )
 
     must_visit = st.multiselect(
-    "Must Visit Places", 
-    ["Eiffel Tower", "Louvre Museum", "Colosseum", "Taj Mahal", "Statue of Liberty", "Central Park", "Custom Spot"],
-    default=["Eiffel Tower"]
+        "Must Visit Places", 
+        ["Eiffel Tower", "Louvre Museum", "Colosseum", "Taj Mahal", "Statue of Liberty", "Central Park", "Custom Spot"],
+        default=["Eiffel Tower"]
     )
 
     special = st.multiselect(
-    "Special Requirements", 
-    ["Wheelchair accessibility", "Quiet nights", "Pet friendly", "Kid friendly", "Senior friendly"],
-    default=["Wheelchair accessibility"]
+        "Special Requirements", 
+        ["Wheelchair accessibility", "Quiet nights", "Pet friendly", "Kid friendly", "Senior friendly"],
+        default=["Wheelchair accessibility"]
     )
 
 # LangChain Prompt Template
@@ -132,12 +132,13 @@ Present the final itinerary using clean markdown headings, bullet points, and ta
 if st.button("🚀 Generate Itinerary"):
     with st.spinner("Crafting your personalized trip itinerary..."):
         try:
-           model = ChatGoogleGenerativeAI(
-               model="gemini-2.5-flash",
-               google_api_key=GOOGLE_API_KEY  # Pass directly from Streamlit widget variable
-           )
+            model = ChatGoogleGenerativeAI(
+                model="gemini-2.5-flash",
+                google_api_key=GOOGLE_API_KEY
+            )
             
-        trip_chain = trip_prompt | model | StrOutputParser()
+            trip_chain = trip_prompt | model | StrOutputParser()
+            
             trip_plan = trip_chain.invoke({
                 "name": name,
                 "source": source,
@@ -151,9 +152,9 @@ if st.button("🚀 Generate Itinerary"):
                 "hotel_type": hotel_type,
                 "transport": transport,
                 "food": food,
-                "interests": interests,
-                "must_visit": must_visit,
-                "special": special
+                "interests": ", ".join(interests),
+                "must_visit": ", ".join(must_visit),
+                "special": ", ".join(special)
             })
 
             st.markdown(trip_plan)
