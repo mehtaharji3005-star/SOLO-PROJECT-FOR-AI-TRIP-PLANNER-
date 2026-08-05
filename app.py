@@ -10,6 +10,9 @@ from reportlab.lib.styles import getSampleStyleSheet
 # App Layout & Configuration
 st.set_page_config(page_title="AI Trip Planner", page_icon="✈️", layout="wide")
 
+# Display background banner image
+st.image("bg.png", use_container_width=True)
+
 st.sidebar.title("API Configuration")
 st.title("AI TRIP PLANNER ✈️ 🚗")
 
