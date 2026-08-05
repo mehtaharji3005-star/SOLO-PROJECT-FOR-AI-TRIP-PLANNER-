@@ -1,7 +1,6 @@
 import json
 from typing import List
 from pydantic import BaseModel, Field
-from crewai import Agent, Task, Crew, Process
 from langchain_openai import ChatOpenAI
 
 # -------------------------------------------------------------------
