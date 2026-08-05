@@ -4,10 +4,8 @@ from IPython.display import Markdown, display
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+import streamlit as st
 print("Module Loaded Successfully ji")
-
-st.set_page_config(page_title = "AI TRIP PLANNER",
-              layout = "wide")
 
 
 st.sidebar.title("SET API CONFIG")
