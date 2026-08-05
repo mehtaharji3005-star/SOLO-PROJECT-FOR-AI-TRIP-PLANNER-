@@ -6,12 +6,60 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 print("Module Loaded Successfully ji")
 
+st.set_page_config(page_title = "AI TRIP PLANNER",
+              layout = "wide")
+
+
+st.sidebar.title("SET API CONFIG")
+st.title("AI TRIP PLANNER ✈️ 🚗 ")
+
+st.image("AI TRIP.png")
+
+st.sidebar.title("fill important detailed which we required")
+st.sidebar.image("bg.png")
+
+
 import os
-os.environ["GOOGLE_API_KEY"] = "AQ.Ab8RN6IUtK4yFgD5K_YRNvd8YLsuPeH2Rl_ubqQl1OV3nNVltA"
-os.environ["TAVILY_API_KEY"] = "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"
-os.environ["OPENWEATHER_API_KEY"] = "585ffe080f9537ffdbecceda8cba7e88"
-os.environ["GOOGLE_PLACES_API_KEY"] = "AIzaSyAUBJVyEQnpImB6d-1kPT_cdFIuwd_pTaE"
+GOOGLE_API_KEY = st.sidebar.text_input("GOOGLE_API_KEY",type = "password")
+os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
+TAVILY_API_KEY = st.sidebat.text_input("TAVILY_API_KEY",type = "password")
+os.environ["TAVILY_API_KEY"] = TAVILY_API_KEY
+OPENWEATHER_API_KEY = st.sidebat.text_input("OPENWEATHER_API_KEY",type = "password")
+os.environ["OPENWEATHER_API_KEY"] = OPENWHEATHER_API_KEY
+GOOGLE_PLACES_API_KEY= st.sidebat.text_input("GOOGLE_PLACES_API_KEY",type = "password")
+os.environ["GOOGLE_PLACES_API_KEY"] = GOOGLE_PLACES_API_KEY
 print("Done Paji")
+
+if GOOGLE_API_KEY:
+  st.sidebar.success("API key Loaded!!")
+else:
+  st.sidebar.info("Give API key")
+
+if TAVILY_API_KEY:
+    st.sidebar.success("API key Loaded!!")
+else:
+    st.sidebar.info("Give API key")
+
+if OPENWEATHER_API_KEY:
+    st.sidebar.success("API key Loaded!!")
+else:
+    st.sidebar.info("Give API key")
+
+if GOOGLE_PLACES_API_KEY:
+    st.sidebar.success("API key Loaded!!")
+else:
+    st.sidebar.info("Give API key")
+
+all_API = [ OPENWEATHER_API_KEY,TAVILY_API_KEY
+           GOOGLE_API_KEYS,  GOOGLE_PLACES_API_KEY]
+if not all(all_API):
+    st.error("Must give API KEYS")
+    st.stop()
+elif all(all_API):
+    st.success("API KEYS LOADED SUCCESSFULLY")
+else:
+    st.info("passes ALL the API keys Succesfully")
+
 
 model = ChatGoogleGenerativeAI(
     model = "gemini-3.5-flash-lite",
