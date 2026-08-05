@@ -55,7 +55,7 @@ with col1:
     travelers = st.number_input("Number of Travelers", min_value=1, value=2)
 
 with col2:
-    budget = st.text_input("Budget (with currency))
+    budget = st.text_input("Budget (with currency)")
     travel_style = st.selectbox("Travel Style", ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"])
     hotel_type = st.selectbox("Hotel Preference", ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"])
     transport = st.selectbox("Transport Preference", ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"])
