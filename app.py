@@ -132,10 +132,10 @@ Present the final itinerary using clean markdown headings, bullet points, and ta
 if st.button("🚀 Generate Itinerary"):
     with st.spinner("Crafting your personalized trip itinerary..."):
         try:
-            model = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
-                google_api_key=GOOGLE_API_KEY
-            )
+           model = ChatGoogleGenerativeAI(
+               model="gemini-2.5-flash",
+               google_api_key=GOOGLE_API_KEY  # Pass directly from Streamlit widget variable
+           )
             
             trip_chain = trip_prompt | model | StrOutputParser()
             
