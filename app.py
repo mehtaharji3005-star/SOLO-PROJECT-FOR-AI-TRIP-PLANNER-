@@ -133,7 +133,7 @@ Present the final itinerary using clean markdown headings, bullet points, and ta
 """)
 
 if st.button("🚀 Generate Itinerary"):
-    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith("AIza"):
+    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith("AQ."):
         st.error("❌ Invalid GOOGLE_API_KEY. Please provide a valid key starting with 'AIza' from Google AI Studio.")
         st.stop()
         
@@ -141,7 +141,7 @@ if st.button("🚀 Generate Itinerary"):
         try:
             # Explicitly pass api_key and set vertexai=False
             model = ChatGoogleGenerativeAI(
-                model="gemini-2.5-flash",
+                model="gemini-3.5-flash",
                 google_api_key=GOOGLE_API_KEY,
                 vertexai=False
             )
