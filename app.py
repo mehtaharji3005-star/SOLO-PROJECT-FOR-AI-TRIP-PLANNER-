@@ -137,8 +137,7 @@ if st.button("🚀 Generate Itinerary"):
                google_api_key=GOOGLE_API_KEY  # Pass directly from Streamlit widget variable
            )
             
-            trip_chain = trip_prompt | model | StrOutputParser()
-            
+        trip_chain = trip_prompt | model | StrOutputParser()
             trip_plan = trip_chain.invoke({
                 "name": name,
                 "source": source,
