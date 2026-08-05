@@ -50,7 +50,7 @@ if GOOGLE_PLACES_API_KEY:
 else:
     st.sidebar.info("Give API key")
 
-all_API = [ OPENWEATHER_API_KEY,TAVILY_API_KEY
+all_API = [ OPENWEATHER_API_KEY , TAVILY_API_KEY
            GOOGLE_API_KEYS,  GOOGLE_PLACES_API_KEY]
 if not all(all_API):
     st.error("Must give API KEYS")
