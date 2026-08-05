@@ -46,16 +46,16 @@ st.header("Trip Details")
 col1, col2 = st.columns(2)
 
 with col1:
-    name = st.text_input("Your Name", "John Doe")
-    source = st.text_input("Source City", "New York")
-    destination = st.text_input("Destination City", "Paris")
+    name = st.text_input("Your Name")
+    source = st.text_input("Source City")
+    destination = st.text_input("Destination City")
     travel_date = st.date_input("Travel Date")
     return_date = st.date_input("Return Date")
     days = st.number_input("Number of Days", min_value=1, value=5)
     travelers = st.number_input("Number of Travelers", min_value=1, value=2)
 
 with col2:
-    budget = st.text_input("Budget (with currency)", "$2000 USD")
+    budget = st.text_input("Budget (with currency))
     travel_style = st.selectbox("Travel Style", ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"])
     hotel_type = st.selectbox("Hotel Preference", ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"])
     transport = st.selectbox("Transport Preference", ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"])
