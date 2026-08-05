@@ -46,9 +46,9 @@ st.header("Trip Details")
 col1, col2 = st.columns(2)
 
 with col1:
-    name = st.text_input("Your Name", "Harji")
-    source = st.text_input("Source City", "Delhi")
-    destination = st.text_input("Destination City", "Goa")
+    name = st.text_input("Your Name")
+    source = st.text_input("Source City")
+    destination = st.text_input("Destination City")
     travel_date = st.date_input("Travel Date")
     return_date = st.date_input("Return Date")
     days = st.number_input("Number of Days", min_value=1, value=5)
@@ -130,11 +130,17 @@ Present the final itinerary using clean markdown headings, bullet points, and ta
 """)
 
 if st.button("🚀 Generate Itinerary"):
+    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith("AIza"):
+        st.error("❌ Invalid GOOGLE_API_KEY. Please provide a valid key starting with 'AIza' from Google AI Studio.")
+        st.stop()
+        
     with st.spinner("Crafting your personalized trip itinerary..."):
         try:
+            # Explicitly pass api_key and set vertexai=False
             model = ChatGoogleGenerativeAI(
                 model="gemini-2.5-flash",
-                google_api_key=GOOGLE_API_KEY
+                google_api_key=GOOGLE_API_KEY,
+                vertexai=False
             )
             
             trip_chain = trip_prompt | model | StrOutputParser()
