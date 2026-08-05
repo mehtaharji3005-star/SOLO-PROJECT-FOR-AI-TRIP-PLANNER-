@@ -59,10 +59,10 @@ with col2:
     travel_style = st.selectbox("Travel Style", ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"])
     hotel_type = st.selectbox("Hotel Preference", ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"])
     transport = st.selectbox("Transport Preference", ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"])
-    food = st.text_input("Food Preference", "Vegetarian / Local Cuisine")
-    interests = st.text_input("Interests", "Museums, Architecture, Photography, Food")
-    must_visit = st.text_input("Must Visit Places", "Eiffel Tower, Louvre Museum")
-    special = st.text_input("Special Requirements", "Wheelchair accessibility, quiet nights")
+    food = st.text_input("Food Preference", ["Vegetarian / Local Cuisine"])
+    interests = st.text_input("Interests", ["Museums, Architecture, Photography, Food"])
+    must_visit = st.text_input("Must Visit Places", ["Eiffel Tower, Louvre Museum"])
+    special = st.text_input("Special Requirements", ["Wheelchair accessibility, quiet nights"])
 
 # LangChain Prompt Template
 trip_prompt = ChatPromptTemplate.from_template("""
