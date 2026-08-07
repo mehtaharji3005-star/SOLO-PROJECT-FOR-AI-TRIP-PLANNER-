@@ -319,7 +319,7 @@ if st.button("🚀 Generate Optimized Itinerary"):
         st.error("❌ Please provide all API keys in the sidebar to proceed.")
         st.stop()
 
-    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith("AIza"):
+    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith:
         st.error(
             "❌ Invalid GOOGLE_API_KEY. Please provide a valid key starting with 'AIza' from Google AI Studio."
         )
@@ -331,7 +331,7 @@ if st.button("🚀 Generate Optimized Itinerary"):
         try:
             # 1. Generate Itinerary text using Gemini
             model = ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash",
+                model="gemini-3.5-flash",
                 google_api_key=GOOGLE_API_KEY,
                 vertexai=False,
             )
