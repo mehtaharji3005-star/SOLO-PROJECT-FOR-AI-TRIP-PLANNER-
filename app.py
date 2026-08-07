@@ -15,7 +15,13 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Image as RLImage, Paragraph, SimpleDocTemplate, Spacer
-from twilio.rest import Client
+
+# Safe Import for Twilio to prevent crashes if missing from environment
+try:
+    from twilio.rest import Client
+    TWILIO_AVAILABLE = True
+except ImportError:
+    TWILIO_AVAILABLE = False
 
 # ==========================================
 # 1. APP CONFIGURATION
@@ -253,9 +259,11 @@ def send_pdf_email(receiver_email, pdf_filepath, client_name, destination_name):
 
 def send_pdf_whatsapp(receiver_phone, pdf_url_or_media_id, client_name, destination_name):
     """Sends a WhatsApp text & PDF link via Twilio."""
+    if not TWILIO_AVAILABLE:
+        raise ImportError("Twilio package is not installed in the system. Add 'twilio' to requirements.txt.")
+
     client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
-    # Ensure phone number formatting
     if not receiver_phone.startswith("+"):
         receiver_phone = "+" + receiver_phone
 
@@ -451,7 +459,6 @@ if st.button("🚀 Generate Itinerary"):
             m3.metric(label="Duration", value=f"{days} Days")
             m4.metric(label="Estimated Budget", value=budget if budget else "N/A")
 
-            # Structured Output Tabs
             out_tab1, out_tab2, out_tab3, out_tab4 = st.tabs(
                 ["🗓️ Full Itinerary", "🖼️ Destination Visual", "📥 Export Options", "✉️ Dispatch Report"]
             )
@@ -470,7 +477,6 @@ if st.button("🚀 Generate Itinerary"):
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
-            # PDF Build
             filename_txt = f"{name}_{dest_query}_Itinerary.txt"
             with open(filename_txt, "w", encoding="utf-8") as f:
                 f.write(trip_plan)
@@ -530,7 +536,6 @@ if st.button("🚀 Generate Itinerary"):
                         )
                 st.markdown("</div>", unsafe_allow_html=True)
 
-            # Direct Email & WhatsApp Sharing Tab
             with out_tab4:
                 st.markdown('<div class="custom-card">', unsafe_allow_html=True)
                 st.markdown("##### 🚀 Direct Client Delivery")
@@ -554,6 +559,8 @@ if st.button("🚀 Generate Itinerary"):
 
                 with e_col2:
                     st.markdown("###### 💬 Send via WhatsApp")
+                    if not TWILIO_AVAILABLE:
+                        st.warning("⚠️ Twilio package is not installed. Please add `twilio` to your `requirements.txt` file.")
                     recipient_phone = st.text_input("Client Phone (+CountryCode)", placeholder="+1234567890")
                     pdf_public_url = st.text_input("Hosted PDF URL (Optional)", placeholder="https://yourserver.com/itinerary.pdf")
                     
