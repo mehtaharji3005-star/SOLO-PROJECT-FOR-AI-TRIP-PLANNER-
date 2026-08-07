@@ -12,7 +12,7 @@ from reportlab.lib.units import inch
 from reportlab.platypus import Image as RLImage, Paragraph, SimpleDocTemplate, Spacer
 
 # ==========================================
-# 1. APP CONFIGURATION & ENTERPRISE STYLING
+# 1. APP CONFIGURATION
 # ==========================================
 st.set_page_config(
     page_title="Enterprise AI Trip Planner Pro",
@@ -21,131 +21,17 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# Custom Enterprise CSS
-st.markdown(
-    """
-<style>
-    /* Dark Slate Executive Theme */
-    .stApp {
-        background-color: #090d16;
-        color: #e2e8f0;
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    
-    /* Header Styling */
-    .hero-container {
-        padding: 1.5rem 0 2rem 0;
-        text-align: center;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        margin-bottom: 2rem;
-    }
-    .hero-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        background: linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
-    }
-    .hero-subtitle {
-        color: #94a3b8;
-        font-size: 1.05rem;
-        font-weight: 400;
-    }
-    
-    /* Glassmorphism Cards */
-    .custom-card {
-        background: rgba(15, 23, 42, 0.65);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 14px;
-        padding: 24px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-        margin-bottom: 24px;
-    }
-    
-    /* Input Styling Adjustments */
-    .stTextInput > div > div > input, .stSelectbox > div > div > div, .stMultiSelect > div {
-        background-color: rgba(30, 41, 59, 0.5) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        color: #f8fafc !important;
-        border-radius: 8px !important;
-    }
-    
-    /* Primary Action Button */
-    .stButton > button {
-        width: 100%;
-        background: linear-gradient(90deg, #0284c7 0%, #2563eb 100%);
-        color: #ffffff;
-        font-size: 1.05rem;
-        font-weight: 600;
-        padding: 12px 24px;
-        border-radius: 10px;
-        border: none;
-        box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.35);
-        transition: all 0.25s ease-in-out;
-    }
-    .stButton > button:hover {
-        background: linear-gradient(90deg, #0369a1 0%, #1d4ed8 100%);
-        box-shadow: 0 6px 20px 0 rgba(2, 132, 199, 0.5);
-        transform: translateY(-1px);
-    }
-
-    /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 12px;
-        background-color: rgba(15, 23, 42, 0.8);
-        padding: 6px;
-        border-radius: 10px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 6px;
-        color: #94a3b8;
-        padding: 8px 18px;
-        font-weight: 500;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #0284c7 !important;
-        color: #ffffff !important;
-    }
-
-    /* Sidebar Aesthetics */
-    section[data-testid="stSidebar"] {
-        background-color: #0b0f19;
-        border-right: 1px solid rgba(255, 255, 255, 0.08);
-    }
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
-
 # ==========================================
-# 2. HELPER FUNCTIONS
+# 2. SIDEBAR CONFIGURATION & THEME SELECTOR
 # ==========================================
-def generate_ai_image(destination_name):
-    """Generates an AI image URL based on the destination using Pollinations AI (FLUX model)"""
-    prompt = f"A high-end luxury architectural travel photograph of {destination_name}, 8k resolution, photorealistic, vibrant color grading, scenic lighting"
-    encoded_prompt = urllib.parse.quote(prompt)
-    return f"https://pollinations.ai/p/{encoded_prompt}?width=1200&height=675&seed=42&model=flux"
-
-
-# ==========================================
-# 3. HEADER & SIDEBAR API SETTINGS
-# ==========================================
-st.markdown(
-    """
-<div class="hero-container">
-    <div class="hero-title">ENTERPRISE AI TRIP PLANNER</div>
-    <div class="hero-subtitle">Bespoke, Data-Driven Itineraries Powered by Advanced Generative Intelligence</div>
-</div>
-""",
-    unsafe_allow_html=True,
-)
-
 with st.sidebar:
+    st.markdown("### 🎨 UI Color Theme")
+    theme_choice = st.selectbox(
+        "Choose Theme Style",
+        ["Midnight Executive", "Emerald Luxe", "Royal Amethyst", "Minimal Light"],
+    )
+
+    st.markdown("---")
     st.markdown("### 🔑 API Configuration")
     st.caption("Enter enterprise keys below to enable LLM & search integration.")
 
@@ -178,8 +64,180 @@ with st.sidebar:
 
 
 # ==========================================
-# 4. MAIN INPUT INTERFACE (TABBED)
+# 3. DYNAMIC COLOR THEME ENGINE
 # ==========================================
+THEMES = {
+    "Midnight Executive": {
+        "bg": "#090d16",
+        "card_bg": "rgba(15, 23, 42, 0.7)",
+        "text": "#e2e8f0",
+        "subtext": "#94a3b8",
+        "title_grad": "linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%)",
+        "btn_grad": "linear-gradient(90deg, #0284c7 0%, #2563eb 100%)",
+        "btn_hover": "linear-gradient(90deg, #0369a1 0%, #1d4ed8 100%)",
+        "tab_active": "#0284c7",
+        "input_bg": "rgba(30, 41, 59, 0.5)",
+        "border": "rgba(255, 255, 255, 0.08)",
+        "sidebar_bg": "#0b0f19",
+    },
+    "Emerald Luxe": {
+        "bg": "#06140e",
+        "card_bg": "rgba(11, 33, 24, 0.75)",
+        "text": "#ecfdf5",
+        "subtext": "#6ee7b7",
+        "title_grad": "linear-gradient(90deg, #34d399 0%, #a7f3d0 50%, #fef08a 100%)",
+        "btn_grad": "linear-gradient(90deg, #059669 0%, #10b981 100%)",
+        "btn_hover": "linear-gradient(90deg, #047857 0%, #059669 100%)",
+        "tab_active": "#059669",
+        "input_bg": "rgba(16, 185, 129, 0.1)",
+        "border": "rgba(52, 211, 153, 0.15)",
+        "sidebar_bg": "#030c08",
+    },
+    "Royal Amethyst": {
+        "bg": "#0f0c1b",
+        "card_bg": "rgba(28, 20, 50, 0.75)",
+        "text": "#f5f3ff",
+        "subtext": "#c084fc",
+        "title_grad": "linear-gradient(90deg, #c084fc 0%, #f472b6 50%, #38bdf8 100%)",
+        "btn_grad": "linear-gradient(90deg, #7c3aed 0%, #9333ea 100%)",
+        "btn_hover": "linear-gradient(90deg, #6d28d9 0%, #7e22ce 100%)",
+        "tab_active": "#7c3aed",
+        "input_bg": "rgba(124, 58, 237, 0.15)",
+        "border": "rgba(192, 132, 252, 0.15)",
+        "sidebar_bg": "#0a0712",
+    },
+    "Minimal Light": {
+        "bg": "#f8fafc",
+        "card_bg": "#ffffff",
+        "text": "#0f172a",
+        "subtext": "#475569",
+        "title_grad": "linear-gradient(90deg, #0284c7 0%, #4f46e5 100%)",
+        "btn_grad": "linear-gradient(90deg, #2563eb 0%, #3b82f6 100%)",
+        "btn_hover": "linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)",
+        "tab_active": "#2563eb",
+        "input_bg": "#f1f5f9",
+        "border": "rgba(15, 23, 42, 0.1)",
+        "sidebar_bg": "#f1f5f9",
+    },
+}
+
+active_theme = THEMES[theme_choice]
+
+st.markdown(
+    f"""
+<style>
+    /* Dynamic Enterprise Theme */
+    .stApp {{
+        background-color: {active_theme['bg']};
+        color: {active_theme['text']};
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }}
+    
+    .hero-container {{
+        padding: 1.5rem 0 2rem 0;
+        text-align: center;
+        border-bottom: 1px solid {active_theme['border']};
+        margin-bottom: 2rem;
+    }}
+    .hero-title {{
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        background: {active_theme['title_grad']};
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }}
+    .hero-subtitle {{
+        color: {active_theme['subtext']};
+        font-size: 1.05rem;
+        font-weight: 400;
+    }}
+    
+    .custom-card {{
+        background: {active_theme['card_bg']};
+        border: 1px solid {active_theme['border']};
+        border-radius: 14px;
+        padding: 24px;
+        backdrop-filter: blur(12px);
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+        margin-bottom: 24px;
+    }}
+    
+    .stTextInput > div > div > input, .stSelectbox > div > div > div, .stMultiSelect > div {{
+        background-color: {active_theme['input_bg']} !important;
+        border: 1px solid {active_theme['border']} !important;
+        color: {active_theme['text']} !important;
+        border-radius: 8px !important;
+    }}
+    
+    .stButton > button {{
+        width: 100%;
+        background: {active_theme['btn_grad']};
+        color: #ffffff;
+        font-size: 1.05rem;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 4px 14px 0 rgba(0, 0, 0, 0.2);
+        transition: all 0.25s ease-in-out;
+    }}
+    .stButton > button:hover {{
+        background: {active_theme['btn_hover']};
+        transform: translateY(-1px);
+    }}
+
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 12px;
+        background-color: {active_theme['card_bg']};
+        padding: 6px;
+        border-radius: 10px;
+        border: 1px solid {active_theme['border']};
+    }}
+    .stTabs [data-baseweb="tab"] {{
+        border-radius: 6px;
+        color: {active_theme['subtext']};
+        padding: 8px 18px;
+        font-weight: 500;
+    }}
+    .stTabs [aria-selected="true"] {{
+        background-color: {active_theme['tab_active']} !important;
+        color: #ffffff !important;
+    }}
+
+    section[data-testid="stSidebar"] {{
+        background-color: {active_theme['sidebar_bg']};
+        border-right: 1px solid {active_theme['border']};
+    }}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+
+# ==========================================
+# 4. HELPER FUNCTIONS
+# ==========================================
+def generate_ai_image(destination_name):
+    prompt = f"A high-end luxury architectural travel photograph of {destination_name}, 8k resolution, photorealistic, vibrant color grading, scenic lighting"
+    encoded_prompt = urllib.parse.quote(prompt)
+    return f"https://pollinations.ai/p/{encoded_prompt}?width=1200&height=675&seed=42&model=flux"
+
+
+# ==========================================
+# 5. MAIN HEADER & FORM INTERFACE
+# ==========================================
+st.markdown(
+    """
+<div class="hero-container">
+    <div class="hero-title">ENTERPRISE AI TRIP PLANNER</div>
+    <div class="hero-subtitle">Bespoke, Data-Driven Itineraries Powered by Advanced Generative Intelligence</div>
+</div>
+""",
+    unsafe_allow_html=True,
+)
+
 input_tab1, input_tab2 = st.tabs(["📌 Core Trip Parameters", "🎯 Personalization & Preferences"])
 
 with input_tab1:
@@ -280,7 +338,7 @@ with input_tab2:
 
 
 # ==========================================
-# 5. PROMPT & EXECUTION LOGIC
+# 6. LLM PROMPT & GENERATION EXECUTION
 # ==========================================
 trip_prompt = ChatPromptTemplate.from_template("""
 You are an executive travel manager. Generate a highly detailed, premium travel itinerary for:
@@ -315,7 +373,6 @@ if st.button("🚀 Generate Itinerary"):
 
     with st.spinner("⏳ Synthesizing itinerary and generating AI visual assets..."):
         try:
-            # LLM Chain Call
             model = ChatGoogleGenerativeAI(
                 model="gemini-3.5-flash",
                 google_api_key=GOOGLE_API_KEY,
@@ -342,11 +399,9 @@ if st.button("🚀 Generate Itinerary"):
                 "language": language,
             })
 
-            # AI Photo Generation
             dest_query = destination if destination else "Luxury Travel Destination"
             image_url = generate_ai_image(dest_query)
 
-            # Executive Summary Dashboard Metrics
             st.markdown("---")
             m1, m2, m3, m4 = st.columns(4)
             m1.metric(label="Passenger", value=name)
@@ -354,7 +409,6 @@ if st.button("🚀 Generate Itinerary"):
             m3.metric(label="Duration", value=f"{days} Days")
             m4.metric(label="Estimated Budget", value=budget if budget else "N/A")
 
-            # Structured Output Tabs
             out_tab1, out_tab2, out_tab3 = st.tabs(["🗓️ Full Itinerary", "🖼️ Destination Visual", "📥 Export Options"])
 
             with out_tab1:
@@ -371,7 +425,6 @@ if st.button("🚀 Generate Itinerary"):
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
-            # File Generation Logic
             filename_txt = f"{name}_{dest_query}_Itinerary.txt"
             with open(filename_txt, "w", encoding="utf-8") as f:
                 f.write(trip_plan)
@@ -381,7 +434,6 @@ if st.button("🚀 Generate Itinerary"):
             styles = getSampleStyleSheet()
             story = []
 
-            # Safe PDF Image Embedder
             try:
                 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
                 response = requests.get(image_url, headers=headers, timeout=10)
@@ -403,7 +455,7 @@ if st.button("🚀 Generate Itinerary"):
                     story.append(RLImage(temp_img_path, width=6.5 * inch, height=3.6 * inch))
                     story.append(Spacer(1, 15))
             except Exception:
-                pass  # Fallback gracefully if image download fails
+                pass
 
             formatted_text = trip_plan.replace("\n", "<br/>")
             story.append(Paragraph(formatted_text, styles["BodyText"]))
