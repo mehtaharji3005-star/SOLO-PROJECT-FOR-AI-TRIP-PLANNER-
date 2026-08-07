@@ -1,12 +1,14 @@
 import io
 import os
 import urllib.parse
+from PIL import Image as PILImage
 import requests
 import streamlit as st
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.units import inch
 from reportlab.platypus import Image as RLImage, Paragraph, SimpleDocTemplate, Spacer
 
 # App Layout & Configuration
@@ -381,30 +383,47 @@ if st.button("🚀 Generate Optimized Itinerary"):
             with open(filename_txt, "w", encoding="utf-8") as f:
                 f.write(trip_plan)
 
-            # 4. PDF Generation (With AI Image Embedded)
+            # 4. PDF Generation (With Validated AI Image Embedded)
             filename_pdf = f"{name}_Trip_Plan.pdf"
             doc = SimpleDocTemplate(filename_pdf)
             styles = getSampleStyleSheet()
             story = []
 
-            # Download AI image binary for PDF embedding
+            # Safely fetch and validate the AI image before embedding in ReportLab
             try:
-                img_data = requests.get(image_url).content
-                img_temp_path = "temp_ai_image.jpg"
-                with open(img_temp_path, "wb") as img_f:
-                    img_f.write(img_data)
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                }
+                response = requests.get(image_url, headers=headers, timeout=10)
 
-                # Add image to PDF
-                story.append(RLImage(img_temp_path, width=450, height=250))
-                story.append(Spacer(1, 20))
+                if response.status_code == 200:
+                    image_bytes = io.BytesIO(response.content)
+                    pil_img = PILImage.open(image_bytes)
+                    pil_img.verify()  # Ensure valid image payload
+
+                    image_bytes.seek(0)
+                    pil_img = PILImage.open(image_bytes)
+
+                    if pil_img.mode in ("RGBA", "P"):
+                        pil_img = pil_img.convert("RGB")
+
+                    temp_img_path = "temp_ai_image.jpg"
+                    pil_img.save(temp_img_path, format="JPEG")
+
+                    story.append(
+                        RLImage(temp_img_path, width=6 * inch, height=3.5 * inch)
+                    )
+                    story.append(Spacer(1, 20))
             except Exception as img_err:
-                pass  # Fallback gracefully if image download for PDF fails
-
-            story.append(
-                Paragraph(
-                    trip_plan.replace("\n", "<br/>"), styles["BodyText"]
+                st.warning(
+                    f"⚠️ Note: AI image couldn't be embedded into PDF. Continuing with text-only PDF..."
                 )
-            )
+
+            # Format markdown text for ReportLab
+            formatted_text = trip_plan.replace("\n", "<br/>")
+            story.append(Paragraph(formatted_text, styles["BodyText"]))
+
+            # Build PDF safely
             doc.build(story)
 
             st.success(
