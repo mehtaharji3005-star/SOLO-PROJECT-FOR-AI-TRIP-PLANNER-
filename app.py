@@ -1,22 +1,37 @@
+import io
 import os
+import urllib.parse
 import requests
 import streamlit as st
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from reportlab.platypus import SimpleDocTemplate, Paragraph
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_google_genai import ChatGoogleGenerativeAI
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Image as RLImage, Paragraph, SimpleDocTemplate, Spacer
 
 # App Layout & Configuration
 st.set_page_config(
-    page_title="AI Trip Planner Pro", 
-    page_icon="✈️", 
+    page_title="AI Trip Planner Pro",
+    page_icon="✈️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
+
+# Helper function to generate an AI photo using Pollinations AI
+def generate_ai_image(destination_name):
+    """Generates an AI image URL based on the destination using Pollinations AI (free, no key needed)"""
+    prompt = f"A realistic high quality travel photograph of {destination_name}, stunning scenery, 8k resolution, cinematic lighting"
+    encoded_prompt = urllib.parse.quote(prompt)
+    image_url = (
+        f"https://pollinations.ai/p/{encoded_prompt}?width=1024&height=600&seed=42&model=flux"
+    )
+    return image_url
+
+
 # Custom CSS for Advanced Luxury/Modern UI
-st.markdown("""
+st.markdown(
+    """
 <style>
     /* Main Theme Overrides */
     .stApp {
@@ -95,7 +110,9 @@ st.markdown("""
         border-right: 1px solid rgba(255, 255, 255, 0.08);
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # Display background banner image
 try:
@@ -103,15 +120,22 @@ try:
 except Exception:
     pass
 
-st.markdown('<h1 class="hero-title">AI TRIP PLANNER ✈️ 🚗</h1>', unsafe_allow_html=True)
-st.markdown('<p class="hero-subtitle">Craft your luxury tailored itinerary powered by advanced AI</p>', unsafe_allow_html=True)
+st.markdown(
+    '<h1 class="hero-title">AI TRIP PLANNER ✈️ 🚗</h1>', unsafe_allow_html=True
+)
+st.markdown(
+    '<p class="hero-subtitle">Craft your luxury tailored itinerary powered by advanced AI</p>',
+    unsafe_allow_html=True,
+)
 
 # Sidebar - API Keys setup
 with st.sidebar:
     st.title("🔑 API Settings")
     st.caption("Provide required API credentials below")
-    
-    GOOGLE_API_KEY = st.text_input("GOOGLE_API_KEY", type="password", help="Required for Gemini Model")
+
+    GOOGLE_API_KEY = st.text_input(
+        "GOOGLE_API_KEY", type="password", help="Required for Gemini Model"
+    )
     os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
     TAVILY_API_KEY = st.text_input("TAVILY_API_KEY", type="password")
@@ -120,10 +144,17 @@ with st.sidebar:
     OPENWEATHER_API_KEY = st.text_input("OPENWEATHER_API_KEY", type="password")
     os.environ["OPENWEATHER_API_KEY"] = OPENWEATHER_API_KEY
 
-    GOOGLE_PLACES_API_KEY = st.text_input("GOOGLE_PLACES_API_KEY", type="password")
+    GOOGLE_PLACES_API_KEY = st.text_input(
+        "GOOGLE_PLACES_API_KEY", type="password"
+    )
     os.environ["GOOGLE_PLACES_API_KEY"] = GOOGLE_PLACES_API_KEY
 
-    all_API = [OPENWEATHER_API_KEY, TAVILY_API_KEY, GOOGLE_API_KEY, GOOGLE_PLACES_API_KEY]
+    all_API = [
+        OPENWEATHER_API_KEY,
+        TAVILY_API_KEY,
+        GOOGLE_API_KEY,
+        GOOGLE_PLACES_API_KEY,
+    ]
 
     if not all(all_API):
         st.error("❌ Please provide all API keys to proceed.")
@@ -141,23 +172,40 @@ with tab1:
     with col1:
         name = st.text_input("Your Name", value="Alex")
         source = st.text_input("Source City", placeholder="e.g., New York")
-        destination = st.text_input("Destination City", placeholder="e.g., Paris")
+        destination = st.text_input(
+            "Destination City", placeholder="e.g., Paris"
+        )
         travel_date = st.date_input("Travel Date")
-        
+
     with col2:
         language = st.selectbox(
             "Preferred Itinerary Language",
-            ["English", "Spanish", "French", "German", "Italian", "Hindi", "Japanese", "Chinese", "Portuguese", "Arabic"]
+            [
+                "English",
+                "Spanish",
+                "French",
+                "German",
+                "Italian",
+                "Hindi",
+                "Japanese",
+                "Chinese",
+                "Portuguese",
+                "Arabic",
+            ],
         )
-        budget = st.text_input("Budget (with currency)", placeholder="e.g., $2000 USD, ₹50,000 INR")
+        budget = st.text_input(
+            "Budget (with currency)", placeholder="e.g., $2000 USD, ₹50,000 INR"
+        )
         return_date = st.date_input("Return Date")
-        
+
     c1, c2 = st.columns(2)
     with c1:
         days = st.number_input("Number of Days", min_value=1, value=5)
     with c2:
-        travelers = st.number_input("Number of Travelers", min_value=1, value=2)
-    st.markdown('</div>', unsafe_allow_html=True)
+        travelers = st.number_input(
+            "Number of Travelers", min_value=1, value=2
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 with tab2:
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
@@ -166,41 +214,67 @@ with tab2:
 
     with col3:
         travel_style = st.selectbox(
-            "Travel Style", 
-            ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"]
+            "Travel Style",
+            ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"],
         )
 
         hotel_type = st.selectbox(
-            "Hotel Preference", 
-            ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"]
+            "Hotel Preference",
+            ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"],
         )
 
         transport = st.selectbox(
-            "Transport Preference", 
-            ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"]
-        )    
+            "Transport Preference",
+            ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"],
+        )
 
-        food = st.text_input("Food Preference", placeholder="e.g., Vegetarian, Vegan, Halal, Local Cuisine")
+        food = st.text_input(
+            "Food Preference",
+            placeholder="e.g., Vegetarian, Vegan, Halal, Local Cuisine",
+        )
 
     with col4:
         interests = st.multiselect(
-            "Interests", 
-            ["Museums", "Architecture", "Photography", "Food & Dining", "Nature & Hiking", "Shopping", "Nightlife", "History"],
-            default=["Museums", "Architecture"]
+            "Interests",
+            [
+                "Museums",
+                "Architecture",
+                "Photography",
+                "Food & Dining",
+                "Nature & Hiking",
+                "Shopping",
+                "Nightlife",
+                "History",
+            ],
+            default=["Museums", "Architecture"],
         )
 
         must_visit = st.multiselect(
-            "Must Visit Places", 
-            ["Eiffel Tower", "Louvre Museum", "Colosseum", "Taj Mahal", "Statue of Liberty", "Central Park", "Custom Spot"],
-            default=["Eiffel Tower"]
+            "Must Visit Places",
+            [
+                "Eiffel Tower",
+                "Louvre Museum",
+                "Colosseum",
+                "Taj Mahal",
+                "Statue of Liberty",
+                "Central Park",
+                "Custom Spot",
+            ],
+            default=["Eiffel Tower"],
         )
 
         special = st.multiselect(
-            "Special Requirements", 
-            ["Wheelchair accessibility", "Quiet nights", "Pet friendly", "Kid friendly", "Senior friendly"],
-            default=["Wheelchair accessibility"]
+            "Special Requirements",
+            [
+                "Wheelchair accessibility",
+                "Quiet nights",
+                "Pet friendly",
+                "Kid friendly",
+                "Senior friendly",
+            ],
+            default=["Wheelchair accessibility"],
         )
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # LangChain Prompt Template
 trip_prompt = ChatPromptTemplate.from_template("""
@@ -244,22 +318,26 @@ if st.button("🚀 Generate Optimized Itinerary"):
     if not all(all_API):
         st.error("❌ Please provide all API keys in the sidebar to proceed.")
         st.stop()
-        
-    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith:
-        st.error("❌ Invalid GOOGLE_API_KEY. Please provide a valid key starting with 'AIza' from Google AI Studio.")
+
+    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith("AIza"):
+        st.error(
+            "❌ Invalid GOOGLE_API_KEY. Please provide a valid key starting with 'AIza' from Google AI Studio."
+        )
         st.stop()
-        
-    with st.spinner(f"✨ Crafting your personalized trip itinerary in {language}..."):
+
+    with st.spinner(
+        f"✨ Crafting your personalized trip itinerary in {language}..."
+    ):
         try:
-            # Explicitly pass api_key and set vertexai=False
+            # 1. Generate Itinerary text using Gemini
             model = ChatGoogleGenerativeAI(
-                model="gemini-3.5-flash",
+                model="gemini-1.5-flash",
                 google_api_key=GOOGLE_API_KEY,
-                vertexai=False
+                vertexai=False,
             )
-            
+
             trip_chain = trip_prompt | model | StrOutputParser()
-            
+
             trip_plan = trip_chain.invoke({
                 "name": name,
                 "source": source,
@@ -276,48 +354,82 @@ if st.button("🚀 Generate Optimized Itinerary"):
                 "interests": ", ".join(interests),
                 "must_visit": ", ".join(must_visit),
                 "special": ", ".join(special),
-                "language": language
+                "language": language,
             })
 
-            # Display Itinerary in visual Card Container
+            # 2. Generate AI Image for the destination
+            image_url = generate_ai_image(
+                destination if destination else "travel destination"
+            )
+
+            # Display Itinerary & AI Photo in visual Card Container
             st.markdown('<div class="custom-card">', unsafe_allow_html=True)
             st.subheader(f"📍 Personalized Itinerary for {name}")
-            st.markdown(trip_plan)
-            st.markdown('</div>', unsafe_allow_html=True)
 
-            # File Saving
+            # Display AI Photo
+            st.image(
+                image_url,
+                caption=f"AI Generated Visual of {destination or 'Destination'}",
+                use_container_width=True,
+            )
+
+            st.markdown(trip_plan)
+            st.markdown("</div>", unsafe_allow_html=True)
+
+            # 3. File Saving
             filename_txt = f"{name}_Trip_Plan.txt"
             with open(filename_txt, "w", encoding="utf-8") as f:
                 f.write(trip_plan)
 
-            # PDF Generation
+            # 4. PDF Generation (With AI Image Embedded)
             filename_pdf = f"{name}_Trip_Plan.pdf"
             doc = SimpleDocTemplate(filename_pdf)
             styles = getSampleStyleSheet()
-            story = [Paragraph(trip_plan.replace("\n", "<br/>"), styles["BodyText"])]
+            story = []
+
+            # Download AI image binary for PDF embedding
+            try:
+                img_data = requests.get(image_url).content
+                img_temp_path = "temp_ai_image.jpg"
+                with open(img_temp_path, "wb") as img_f:
+                    img_f.write(img_data)
+
+                # Add image to PDF
+                story.append(RLImage(img_temp_path, width=450, height=250))
+                story.append(Spacer(1, 20))
+            except Exception as img_err:
+                pass  # Fallback gracefully if image download for PDF fails
+
+            story.append(
+                Paragraph(
+                    trip_plan.replace("\n", "<br/>"), styles["BodyText"]
+                )
+            )
             doc.build(story)
 
-            st.success(f"🎉 Trip plan saved locally as {filename_txt} and {filename_pdf}!")
+            st.success(
+                f"🎉 Trip plan saved locally as {filename_txt} and {filename_pdf}!"
+            )
 
             # Downloads bar
             st.subheader("📥 Export Your Itinerary")
             d_col1, d_col2 = st.columns(2)
-            
+
             with d_col1:
                 st.download_button(
                     label="📄 Download Text File (.txt)",
                     data=trip_plan,
                     file_name=filename_txt,
-                    mime="text/plain"
+                    mime="text/plain",
                 )
-            
+
             with d_col2:
                 with open(filename_pdf, "rb") as pdf_file:
                     st.download_button(
                         label="📕 Download PDF Document (.pdf)",
                         data=pdf_file,
                         file_name=filename_pdf,
-                        mime="application/pdf"
+                        mime="application/pdf",
                     )
 
         except Exception as e:
