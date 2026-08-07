@@ -1,6 +1,11 @@
 import io
 import os
+import smtplib
 import urllib.parse
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 from PIL import Image as PILImage
 import requests
 import streamlit as st
@@ -10,6 +15,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Image as RLImage, Paragraph, SimpleDocTemplate, Spacer
+from twilio.rest import Client
 
 # ==========================================
 # 1. APP CONFIGURATION
@@ -22,7 +28,7 @@ st.set_page_config(
 )
 
 # ==========================================
-# 2. SIDEBAR CONFIGURATION & THEME SELECTOR
+# 2. SIDEBAR CONFIGURATION & API SETTINGS
 # ==========================================
 with st.sidebar:
     st.markdown("### 🎨 UI Color Theme")
@@ -57,10 +63,15 @@ with st.sidebar:
     ]
 
     st.markdown("---")
-    if not all(all_API):
-        st.info("ℹ️ Fill in all API keys to start planning.")
-    else:
-        st.success("✅ System Ready")
+    st.markdown("### 📬 Messaging API Credentials")
+    st.caption("Required for Email & WhatsApp dispatch.")
+
+    SENDER_EMAIL = st.text_input("Sender Gmail Address", placeholder="company@gmail.com")
+    SENDER_PASSWORD = st.text_input("Gmail App Password", type="password")
+
+    TWILIO_SID = st.text_input("Twilio Account SID", type="password")
+    TWILIO_AUTH_TOKEN = st.text_input("Twilio Auth Token", type="password")
+    TWILIO_WHATSAPP_NUMBER = st.text_input("Twilio WhatsApp Number", placeholder="+14155238886")
 
 
 # ==========================================
@@ -126,13 +137,11 @@ active_theme = THEMES[theme_choice]
 st.markdown(
     f"""
 <style>
-    /* Dynamic Enterprise Theme */
     .stApp {{
         background-color: {active_theme['bg']};
         color: {active_theme['text']};
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }}
-    
     .hero-container {{
         padding: 1.5rem 0 2rem 0;
         text-align: center;
@@ -153,7 +162,6 @@ st.markdown(
         font-size: 1.05rem;
         font-weight: 400;
     }}
-    
     .custom-card {{
         background: {active_theme['card_bg']};
         border: 1px solid {active_theme['border']};
@@ -163,14 +171,12 @@ st.markdown(
         box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
         margin-bottom: 24px;
     }}
-    
     .stTextInput > div > div > input, .stSelectbox > div > div > div, .stMultiSelect > div {{
         background-color: {active_theme['input_bg']} !important;
         border: 1px solid {active_theme['border']} !important;
         color: {active_theme['text']} !important;
         border-radius: 8px !important;
     }}
-    
     .stButton > button {{
         width: 100%;
         background: {active_theme['btn_grad']};
@@ -187,7 +193,6 @@ st.markdown(
         background: {active_theme['btn_hover']};
         transform: translateY(-1px);
     }}
-
     .stTabs [data-baseweb="tab-list"] {{
         gap: 12px;
         background-color: {active_theme['card_bg']};
@@ -205,7 +210,6 @@ st.markdown(
         background-color: {active_theme['tab_active']} !important;
         color: #ffffff !important;
     }}
-
     section[data-testid="stSidebar"] {{
         background-color: {active_theme['sidebar_bg']};
         border-right: 1px solid {active_theme['border']};
@@ -217,12 +221,50 @@ st.markdown(
 
 
 # ==========================================
-# 4. HELPER FUNCTIONS
+# 4. HELPER FUNCTIONS & MESSAGING UTILITIES
 # ==========================================
 def generate_ai_image(destination_name):
     prompt = f"A high-end luxury architectural travel photograph of {destination_name}, 8k resolution, photorealistic, vibrant color grading, scenic lighting"
     encoded_prompt = urllib.parse.quote(prompt)
     return f"https://pollinations.ai/p/{encoded_prompt}?width=1200&height=675&seed=42&model=flux"
+
+
+def send_pdf_email(receiver_email, pdf_filepath, client_name, destination_name):
+    """Sends the generated PDF via Gmail SMTP."""
+    msg = MIMEMultipart()
+    msg["From"] = SENDER_EMAIL
+    msg["To"] = receiver_email
+    msg["Subject"] = f"✈️ Your Travel Itinerary for {destination_name}"
+
+    body = f"Hello {client_name},\n\nPlease find attached your personalized trip itinerary for {destination_name}.\n\nBon Voyage!\nAI Travel Team"
+    msg.attach(MIMEText(body, "plain"))
+
+    with open(pdf_filepath, "rb") as f:
+        attachment = MIMEApplication(f.read(), _subtype="pdf")
+        attachment.add_header("Content-Disposition", "attachment", filename=os.path.basename(pdf_filepath))
+        msg.attach(attachment)
+
+    server = smtplib.SMTP("smtp.gmail.com", 587)
+    server.starttls()
+    server.login(SENDER_EMAIL, SENDER_PASSWORD)
+    server.send_message(msg)
+    server.quit()
+
+
+def send_pdf_whatsapp(receiver_phone, pdf_url_or_media_id, client_name, destination_name):
+    """Sends a WhatsApp text & PDF link via Twilio."""
+    client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
+
+    # Ensure phone number formatting
+    if not receiver_phone.startswith("+"):
+        receiver_phone = "+" + receiver_phone
+
+    message = client.messages.create(
+        from_=f"whatsapp:{TWILIO_WHATSAPP_NUMBER}",
+        body=f"Hello {client_name}! 🌟 Your customized travel itinerary for {destination_name} is ready. Download it here: {pdf_url_or_media_id}",
+        to=f"whatsapp:{receiver_phone}",
+    )
+    return message.sid
 
 
 # ==========================================
@@ -409,7 +451,10 @@ if st.button("🚀 Generate Itinerary"):
             m3.metric(label="Duration", value=f"{days} Days")
             m4.metric(label="Estimated Budget", value=budget if budget else "N/A")
 
-            out_tab1, out_tab2, out_tab3 = st.tabs(["🗓️ Full Itinerary", "🖼️ Destination Visual", "📥 Export Options"])
+            # Structured Output Tabs
+            out_tab1, out_tab2, out_tab3, out_tab4 = st.tabs(
+                ["🗓️ Full Itinerary", "🖼️ Destination Visual", "📥 Export Options", "✉️ Dispatch Report"]
+            )
 
             with out_tab1:
                 st.markdown('<div class="custom-card">', unsafe_allow_html=True)
@@ -425,6 +470,7 @@ if st.button("🚀 Generate Itinerary"):
                 )
                 st.markdown("</div>", unsafe_allow_html=True)
 
+            # PDF Build
             filename_txt = f"{name}_{dest_query}_Itinerary.txt"
             with open(filename_txt, "w", encoding="utf-8") as f:
                 f.write(trip_plan)
@@ -482,6 +528,48 @@ if st.button("🚀 Generate Itinerary"):
                             file_name=filename_pdf,
                             mime="application/pdf",
                         )
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            # Direct Email & WhatsApp Sharing Tab
+            with out_tab4:
+                st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+                st.markdown("##### 🚀 Direct Client Delivery")
+                
+                e_col1, e_col2 = st.columns(2)
+
+                with e_col1:
+                    st.markdown("###### 📧 Send via Email")
+                    recipient_email = st.text_input("Client Email Address", placeholder="client@example.com")
+                    if st.button("Send Email PDF"):
+                        if not SENDER_EMAIL or not SENDER_PASSWORD:
+                            st.error("❌ Sender Gmail credentials missing in Sidebar!")
+                        elif not recipient_email:
+                            st.error("❌ Please provide a client email address.")
+                        else:
+                            try:
+                                send_pdf_email(recipient_email, filename_pdf, name, dest_query)
+                                st.success(f"✅ Itinerary PDF successfully emailed to {recipient_email}!")
+                            except Exception as email_err:
+                                st.error(f"Failed to send email: {email_err}")
+
+                with e_col2:
+                    st.markdown("###### 💬 Send via WhatsApp")
+                    recipient_phone = st.text_input("Client Phone (+CountryCode)", placeholder="+1234567890")
+                    pdf_public_url = st.text_input("Hosted PDF URL (Optional)", placeholder="https://yourserver.com/itinerary.pdf")
+                    
+                    if st.button("Send WhatsApp Message"):
+                        if not TWILIO_SID or not TWILIO_AUTH_TOKEN or not TWILIO_WHATSAPP_NUMBER:
+                            st.error("❌ Twilio API credentials missing in Sidebar!")
+                        elif not recipient_phone:
+                            st.error("❌ Please provide a phone number.")
+                        else:
+                            try:
+                                link_to_send = pdf_public_url if pdf_public_url else image_url
+                                sid = send_pdf_whatsapp(recipient_phone, link_to_send, name, dest_query)
+                                st.success(f"✅ WhatsApp message sent! (Twilio SID: {sid})")
+                            except Exception as wa_err:
+                                st.error(f"Failed to send WhatsApp message: {wa_err}")
+
                 st.markdown("</div>", unsafe_allow_html=True)
 
             st.balloons()
