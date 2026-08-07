@@ -150,7 +150,7 @@ if st.button("🚀 Generate Itinerary"):
         try:
             # Explicitly pass api_key and set vertexai=False
             model = ChatGoogleGenerativeAI(
-                model="gemini-1.5-flash",
+                model="gemini-3.5-flash",
                 google_api_key=GOOGLE_API_KEY,
                 vertexai=False
             )
