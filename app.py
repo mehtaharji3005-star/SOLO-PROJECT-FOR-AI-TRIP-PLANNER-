@@ -39,7 +39,7 @@ all_API = [
 ]
 
 if not all(all_API):
-    st.error("❌ Please provide all API keys in the sidebar to proceed.")
+    st.sidebar.error("❌ Please provide all API keys in the sidebar to proceed.")
     st.stop()
 else:
     st.sidebar.success("✅ All API keys loaded successfully.")
@@ -58,6 +58,12 @@ with col1:
     travelers = st.number_input("Number of Travelers", min_value=1, value=2)
 
 with col2:
+    # Language Selection Widget
+    language = st.selectbox(
+        "Preferred Itinerary Language",
+        ["English", "Spanish", "French", "German", "Italian", "Hindi", "Japanese", "Chinese", "Portuguese", "Arabic"]
+    )
+
     budget = st.text_input("Budget (with currency)", placeholder="e.g., $2000 USD, ₹50,000 INR")
 
     # Single Selection (Drop-down)
@@ -118,6 +124,9 @@ User Details:
 - Interests: {interests}
 - Must Visit Places: {must_visit}
 - Special Requirements: {special}
+- Preferred Output Language: {language}
+
+CRITICAL INSTRUCTION: Generate the ENTIRE itinerary in {language}. 
 
 Generate:
 - Day-wise itinerary (Day 1 to Last Day) with Morning, Afternoon, Evening, and Night schedules
@@ -133,15 +142,15 @@ Present the final itinerary using clean markdown headings, bullet points, and ta
 """)
 
 if st.button("🚀 Generate Itinerary"):
-    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith("AQ."):
+    if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith("AIza"):
         st.error("❌ Invalid GOOGLE_API_KEY. Please provide a valid key starting with 'AIza' from Google AI Studio.")
         st.stop()
         
-    with st.spinner("Crafting your personalized trip itinerary..."):
+    with st.spinner(f"Crafting your personalized trip itinerary in {language}..."):
         try:
             # Explicitly pass api_key and set vertexai=False
             model = ChatGoogleGenerativeAI(
-                model="gemini-3.5-flash",
+                model="gemini-1.5-flash",
                 google_api_key=GOOGLE_API_KEY,
                 vertexai=False
             )
@@ -163,7 +172,8 @@ if st.button("🚀 Generate Itinerary"):
                 "food": food,
                 "interests": ", ".join(interests),
                 "must_visit": ", ".join(must_visit),
-                "special": ", ".join(special)
+                "special": ", ".join(special),
+                "language": language
             })
 
             st.markdown(trip_plan)
