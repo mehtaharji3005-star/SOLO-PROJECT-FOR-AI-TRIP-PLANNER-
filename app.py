@@ -11,104 +11,109 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import inch
 from reportlab.platypus import Image as RLImage, Paragraph, SimpleDocTemplate, Spacer
 
-# App Layout & Configuration
+# ==========================================
+# 1. APP CONFIGURATION & ENTERPRISE STYLING
+# ==========================================
 st.set_page_config(
-    page_title="AI Trip Planner Pro",
+    page_title="Enterprise AI Trip Planner Pro",
     page_icon="✈️",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-
-# Helper function to generate an AI photo using Pollinations AI
-def generate_ai_image(destination_name):
-    """Generates an AI image URL based on the destination using Pollinations AI (free, no key needed)"""
-    prompt = f"A realistic high quality travel photograph of {destination_name}, stunning scenery, 8k resolution, cinematic lighting"
-    encoded_prompt = urllib.parse.quote(prompt)
-    image_url = (
-        f"https://pollinations.ai/p/{encoded_prompt}?width=1024&height=600&seed=42&model=flux"
-    )
-    return image_url
-
-
-# Custom CSS for Advanced Luxury/Modern UI
+# Custom Enterprise CSS
 st.markdown(
     """
 <style>
-    /* Main Theme Overrides */
+    /* Dark Slate Executive Theme */
     .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-        color: #f8fafc;
+        background-color: #090d16;
+        color: #e2e8f0;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
     
-    /* Header Container Styling */
-    .hero-title {
-        font-size: 2.8rem;
-        font-weight: 800;
-        background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    /* Header Styling */
+    .hero-container {
+        padding: 1.5rem 0 2rem 0;
         text-align: center;
-        margin-bottom: 0.2rem;
-    }
-    .hero-subtitle {
-        text-align: center;
-        color: #94a3b8;
-        font-size: 1.1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         margin-bottom: 2rem;
     }
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        background: linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.5rem;
+    }
+    .hero-subtitle {
+        color: #94a3b8;
+        font-size: 1.05rem;
+        font-weight: 400;
+    }
     
-    /* Custom Card Style Containers */
+    /* Glassmorphism Cards */
     .custom-card {
-        background: rgba(30, 41, 59, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 16px;
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
         padding: 24px;
         backdrop-filter: blur(12px);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-        margin-bottom: 20px;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        margin-bottom: 24px;
     }
     
-    /* Custom Tab Formatting */
+    /* Input Styling Adjustments */
+    .stTextInput > div > div > input, .stSelectbox > div > div > div, .stMultiSelect > div {
+        background-color: rgba(30, 41, 59, 0.5) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #f8fafc !important;
+        border-radius: 8px !important;
+    }
+    
+    /* Primary Action Button */
+    .stButton > button {
+        width: 100%;
+        background: linear-gradient(90deg, #0284c7 0%, #2563eb 100%);
+        color: #ffffff;
+        font-size: 1.05rem;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 10px;
+        border: none;
+        box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.35);
+        transition: all 0.25s ease-in-out;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(90deg, #0369a1 0%, #1d4ed8 100%);
+        box-shadow: 0 6px 20px 0 rgba(2, 132, 199, 0.5);
+        transform: translateY(-1px);
+    }
+
+    /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: rgba(15, 23, 42, 0.6);
-        padding: 8px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        gap: 12px;
+        background-color: rgba(15, 23, 42, 0.8);
+        padding: 6px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
     }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 8px;
+        border-radius: 6px;
         color: #94a3b8;
-        padding: 10px 20px;
+        padding: 8px 18px;
+        font-weight: 500;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #3b82f6 !important;
+        background-color: #0284c7 !important;
         color: #ffffff !important;
-        font-weight: 600;
     }
-    
-    /* Stylish Button */
-    .stButton>button {
-        width: 100%;
-        background: linear-gradient(90deg, #2563eb 0%, #4f46e5 100%);
-        color: white;
-        font-size: 1.1rem;
-        font-weight: 700;
-        padding: 14px 28px;
-        border-radius: 12px;
-        border: none;
-        box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.39);
-        transition: all 0.3s ease;
-    }
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px 0 rgba(37, 99, 235, 0.6);
-    }
-    
+
     /* Sidebar Aesthetics */
     section[data-testid="stSidebar"] {
-        background-color: rgba(15, 23, 42, 0.95);
+        background-color: #0b0f19;
         border-right: 1px solid rgba(255, 255, 255, 0.08);
     }
 </style>
@@ -116,39 +121,46 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Display background banner image
-try:
-    st.image("bg.png", use_container_width=True)
-except Exception:
-    pass
 
+# ==========================================
+# 2. HELPER FUNCTIONS
+# ==========================================
+def generate_ai_image(destination_name):
+    """Generates an AI image URL based on the destination using Pollinations AI (FLUX model)"""
+    prompt = f"A high-end luxury architectural travel photograph of {destination_name}, 8k resolution, photorealistic, vibrant color grading, scenic lighting"
+    encoded_prompt = urllib.parse.quote(prompt)
+    return f"https://pollinations.ai/p/{encoded_prompt}?width=1200&height=675&seed=42&model=flux"
+
+
+# ==========================================
+# 3. HEADER & SIDEBAR API SETTINGS
+# ==========================================
 st.markdown(
-    '<h1 class="hero-title">AI TRIP PLANNER ✈️ 🚗</h1>', unsafe_allow_html=True
-)
-st.markdown(
-    '<p class="hero-subtitle">Craft your luxury tailored itinerary powered by advanced AI</p>',
+    """
+<div class="hero-container">
+    <div class="hero-title">ENTERPRISE AI TRIP PLANNER</div>
+    <div class="hero-subtitle">Bespoke, Data-Driven Itineraries Powered by Advanced Generative Intelligence</div>
+</div>
+""",
     unsafe_allow_html=True,
 )
 
-# Sidebar - API Keys setup
 with st.sidebar:
-    st.title("🔑 API Settings")
-    st.caption("Provide required API credentials below")
+    st.markdown("### 🔑 API Configuration")
+    st.caption("Enter enterprise keys below to enable LLM & search integration.")
 
     GOOGLE_API_KEY = st.text_input(
-        "GOOGLE_API_KEY", type="password", help="Required for Gemini Model"
+        "Google Gemini API Key", type="password", help="Required for Gemini Model"
     )
     os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
-    TAVILY_API_KEY = st.text_input("TAVILY_API_KEY", type="password")
+    TAVILY_API_KEY = st.text_input("Tavily Search API Key", type="password")
     os.environ["TAVILY_API_KEY"] = TAVILY_API_KEY
 
-    OPENWEATHER_API_KEY = st.text_input("OPENWEATHER_API_KEY", type="password")
+    OPENWEATHER_API_KEY = st.text_input("OpenWeather API Key", type="password")
     os.environ["OPENWEATHER_API_KEY"] = OPENWEATHER_API_KEY
 
-    GOOGLE_PLACES_API_KEY = st.text_input(
-        "GOOGLE_PLACES_API_KEY", type="password"
-    )
+    GOOGLE_PLACES_API_KEY = st.text_input("Google Places API Key", type="password")
     os.environ["GOOGLE_PLACES_API_KEY"] = GOOGLE_PLACES_API_KEY
 
     all_API = [
@@ -158,30 +170,32 @@ with st.sidebar:
         GOOGLE_PLACES_API_KEY,
     ]
 
+    st.markdown("---")
     if not all(all_API):
-        st.error("❌ Please provide all API keys to proceed.")
+        st.info("ℹ️ Fill in all API keys to start planning.")
     else:
-        st.success("✅ All API keys loaded successfully.")
+        st.success("✅ System Ready")
 
-# Main Form Inputs organized with Modern Tabs
-tab1, tab2 = st.tabs(["📋 Trip Essentials", "🎨 Preferences & Customization"])
 
-with tab1:
+# ==========================================
+# 4. MAIN INPUT INTERFACE (TABBED)
+# ==========================================
+input_tab1, input_tab2 = st.tabs(["📌 Core Trip Parameters", "🎯 Personalization & Preferences"])
+
+with input_tab1:
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.subheader("Basic Travel Information")
+    st.markdown("##### ✈️ Primary Route & Details")
     col1, col2 = st.columns(2)
 
     with col1:
-        name = st.text_input("Your Name", value="Alex")
-        source = st.text_input("Source City", placeholder="e.g., New York")
-        destination = st.text_input(
-            "Destination City", placeholder="e.g., Paris"
-        )
-        travel_date = st.date_input("Travel Date")
+        name = st.text_input("Client / Traveler Name", value="Alex")
+        source = st.text_input("Departure City", placeholder="e.g., London, UK")
+        destination = st.text_input("Destination City", placeholder="e.g., Kyoto, Japan")
+        travel_date = st.date_input("Departure Date")
 
     with col2:
         language = st.selectbox(
-            "Preferred Itinerary Language",
+            "Output Language",
             [
                 "English",
                 "Spanish",
@@ -195,149 +209,118 @@ with tab1:
                 "Arabic",
             ],
         )
-        budget = st.text_input(
-            "Budget (with currency)", placeholder="e.g., $2000 USD, ₹50,000 INR"
-        )
+        budget = st.text_input("Budget Estimate", placeholder="e.g., $3,500 USD")
         return_date = st.date_input("Return Date")
 
     c1, c2 = st.columns(2)
     with c1:
-        days = st.number_input("Number of Days", min_value=1, value=5)
+        days = st.number_input("Duration (Days)", min_value=1, value=5)
     with c2:
-        travelers = st.number_input(
-            "Number of Travelers", min_value=1, value=2
-        )
+        travelers = st.number_input("Travelers Count", min_value=1, value=2)
     st.markdown("</div>", unsafe_allow_html=True)
 
-with tab2:
+with input_tab2:
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-    st.subheader("Styles & Specific Preferences")
+    st.markdown("##### 🎨 Custom Experience Filters")
     col3, col4 = st.columns(2)
 
     with col3:
         travel_style = st.selectbox(
-            "Travel Style",
-            ["Relaxed", "Balanced", "Fast-paced", "Luxury", "Backpacker"],
+            "Pacing & Style",
+            ["Balanced", "Relaxed", "Fast-paced", "Luxury", "Backpacker"],
         )
-
         hotel_type = st.selectbox(
-            "Hotel Preference",
-            ["Budget", "3-Star", "4-Star", "5-Star Luxury", "Hostel"],
+            "Accommodation Level",
+            ["5-Star Luxury", "4-Star", "3-Star", "Boutique", "Hostel"],
         )
-
         transport = st.selectbox(
-            "Transport Preference",
-            ["Public Transport", "Rental Car", "Taxi/Uber", "Walking"],
+            "Transit Preference",
+            ["Private Chauffeur/Taxi", "Public Transport", "Rental Car", "Walking"],
         )
-
-        food = st.text_input(
-            "Food Preference",
-            placeholder="e.g., Vegetarian, Vegan, Halal, Local Cuisine",
-        )
+        food = st.text_input("Dietary Preferences", placeholder="e.g., Fine Dining, Vegetarian, Local Street Food")
 
     with col4:
         interests = st.multiselect(
-            "Interests",
+            "Key Focus Areas",
             [
-                "Museums",
                 "Architecture",
-                "Photography",
-                "Food & Dining",
+                "Culture & Museums",
+                "Fine Dining",
                 "Nature & Hiking",
                 "Shopping",
                 "Nightlife",
                 "History",
+                "Photography",
             ],
-            default=["Museums", "Architecture"],
+            default=["Culture & Museums", "Fine Dining"],
         )
-
         must_visit = st.multiselect(
-            "Must Visit Places",
+            "Priority Attractions",
             [
                 "Eiffel Tower",
                 "Louvre Museum",
                 "Colosseum",
                 "Taj Mahal",
-                "Statue of Liberty",
-                "Central Park",
+                "Fushimi Inari Shrine",
                 "Custom Spot",
             ],
-            default=["Eiffel Tower"],
+            default=["Louvre Museum"],
         )
-
         special = st.multiselect(
-            "Special Requirements",
+            "Special Requests",
             [
-                "Wheelchair accessibility",
-                "Quiet nights",
-                "Pet friendly",
-                "Kid friendly",
-                "Senior friendly",
+                "Wheelchair Accessibility",
+                "Kid Friendly",
+                "Senior Friendly",
+                "Quiet Evenings",
+                "Pet Friendly",
             ],
-            default=["Wheelchair accessibility"],
         )
     st.markdown("</div>", unsafe_allow_html=True)
 
-# LangChain Prompt Template
+
+# ==========================================
+# 5. PROMPT & EXECUTION LOGIC
+# ==========================================
 trip_prompt = ChatPromptTemplate.from_template("""
-You are an advanced AI Travel Planner and professional tour consultant. Generate a complete, personalized, realistic, and optimized travel itinerary based on the user's inputs.
+You are an executive travel manager. Generate a highly detailed, premium travel itinerary for:
 
-User Details:
-- Name: {name}
-- Source: {source}
-- Destination: {destination}
-- Departure Date: {travel_date}
-- Return Date: {return_date}
-- Duration: {days} Days
-- Travelers: {travelers}
-- Budget: {budget}
-- Travel Style: {travel_style}
-- Hotel Category: {hotel_type}
-- Transportation Preference: {transport}
-- Food Preference: {food}
-- Interests: {interests}
-- Must Visit Places: {must_visit}
-- Special Requirements: {special}
-- Preferred Output Language: {language}
+User Profile:
+- Name: {name} | Route: {source} to {destination}
+- Dates: {travel_date} to {return_date} ({days} Days) | Travelers: {travelers}
+- Budget: {budget} | Style: {travel_style} | Hotel: {hotel_type}
+- Transport: {transport} | Dietary: {food}
+- Interests: {interests} | Must Visit: {must_visit} | Special Requirements: {special}
+- Preferred Language: {language}
 
-CRITICAL INSTRUCTION: Generate the ENTIRE itinerary in {language}. 
+CRITICAL INSTRUCTION: Write the ENTIRE response strictly in {language}. Use modern Markdown tables and bold headers.
 
-Generate:
-- Day-wise itinerary (Day 1 to Last Day) with Morning, Afternoon, Evening, and Night schedules
-- Top attractions and hidden gems
-- Estimated travel time between locations
-- Hotel and Restaurant recommendations
-- Daily and total cost breakdown
-- Packing checklist & Weather advice
-- Safety tips and local customs
-- Emergency contacts and nearby hospitals
-
-Present the final itinerary using clean markdown headings, bullet points, and tables.
+Structure the itinerary:
+1. Executive Summary & Trip Overview
+2. Day-by-Day Detailed Itinerary (Morning, Afternoon, Evening, Night)
+3. Dining & Hotel Recommendations
+4. Cost & Budget Breakdown Table
+5. Essential Travel Tips (Weather, Safety, Logistics)
 """)
 
-st.write("")
-if st.button("🚀 Generate Optimized Itinerary"):
+st.markdown("###")
+if st.button("🚀 Generate Itinerary"):
     if not all(all_API):
-        st.error("❌ Please provide all API keys in the sidebar to proceed.")
+        st.error("❌ Please fill in all required API credentials in the left sidebar.")
         st.stop()
 
     if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith:
-        st.error(
-            "❌ Invalid GOOGLE_API_KEY. Please provide a valid key starting with 'AIza' from Google AI Studio."
-        )
+        st.error("❌ Invalid GOOGLE_API_KEY format. Please check your credentials.")
         st.stop()
 
-    with st.spinner(
-        f"✨ Crafting your personalized trip itinerary in {language}..."
-    ):
+    with st.spinner("⏳ Synthesizing itinerary and generating AI visual assets..."):
         try:
-            # 1. Generate Itinerary text using Gemini
+            # LLM Chain Call
             model = ChatGoogleGenerativeAI(
                 model="gemini-3.5-flash",
                 google_api_key=GOOGLE_API_KEY,
                 vertexai=False,
             )
-
             trip_chain = trip_prompt | model | StrOutputParser()
 
             trip_plan = trip_chain.invoke({
@@ -359,47 +342,54 @@ if st.button("🚀 Generate Optimized Itinerary"):
                 "language": language,
             })
 
-            # 2. Generate AI Image for the destination
-            image_url = generate_ai_image(
-                destination if destination else "travel destination"
-            )
+            # AI Photo Generation
+            dest_query = destination if destination else "Luxury Travel Destination"
+            image_url = generate_ai_image(dest_query)
 
-            # Display Itinerary & AI Photo in visual Card Container
-            st.markdown('<div class="custom-card">', unsafe_allow_html=True)
-            st.subheader(f"📍 Personalized Itinerary for {name}")
+            # Executive Summary Dashboard Metrics
+            st.markdown("---")
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric(label="Passenger", value=name)
+            m2.metric(label="Destination", value=dest_query)
+            m3.metric(label="Duration", value=f"{days} Days")
+            m4.metric(label="Estimated Budget", value=budget if budget else "N/A")
 
-            # Display AI Photo
-            st.image(
-                image_url,
-                caption=f"AI Generated Visual of {destination or 'Destination'}",
-                use_container_width=True,
-            )
+            # Structured Output Tabs
+            out_tab1, out_tab2, out_tab3 = st.tabs(["🗓️ Full Itinerary", "🖼️ Destination Visual", "📥 Export Options"])
 
-            st.markdown(trip_plan)
-            st.markdown("</div>", unsafe_allow_html=True)
+            with out_tab1:
+                st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+                st.markdown(trip_plan)
+                st.markdown("</div>", unsafe_allow_html=True)
 
-            # 3. File Saving
-            filename_txt = f"{name}_Trip_Plan.txt"
+            with out_tab2:
+                st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+                st.image(
+                    image_url,
+                    caption=f"AI Generated Visual Preview for {dest_query}",
+                    use_container_width=True,
+                )
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            # File Generation Logic
+            filename_txt = f"{name}_{dest_query}_Itinerary.txt"
             with open(filename_txt, "w", encoding="utf-8") as f:
                 f.write(trip_plan)
 
-            # 4. PDF Generation (With Validated AI Image Embedded)
-            filename_pdf = f"{name}_Trip_Plan.pdf"
+            filename_pdf = f"{name}_{dest_query}_Itinerary.pdf"
             doc = SimpleDocTemplate(filename_pdf)
             styles = getSampleStyleSheet()
             story = []
 
-            # Safely fetch and validate the AI image before embedding in ReportLab
+            # Safe PDF Image Embedder
             try:
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                }
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
                 response = requests.get(image_url, headers=headers, timeout=10)
 
                 if response.status_code == 200:
                     image_bytes = io.BytesIO(response.content)
                     pil_img = PILImage.open(image_bytes)
-                    pil_img.verify()  # Ensure valid image payload
+                    pil_img.verify()
 
                     image_bytes.seek(0)
                     pil_img = PILImage.open(image_bytes)
@@ -410,46 +400,39 @@ if st.button("🚀 Generate Optimized Itinerary"):
                     temp_img_path = "temp_ai_image.jpg"
                     pil_img.save(temp_img_path, format="JPEG")
 
-                    story.append(
-                        RLImage(temp_img_path, width=6 * inch, height=3.5 * inch)
-                    )
-                    story.append(Spacer(1, 20))
-            except Exception as img_err:
-                st.warning(
-                    f"⚠️ Note: AI image couldn't be embedded into PDF. Continuing with text-only PDF..."
-                )
+                    story.append(RLImage(temp_img_path, width=6.5 * inch, height=3.6 * inch))
+                    story.append(Spacer(1, 15))
+            except Exception:
+                pass  # Fallback gracefully if image download fails
 
-            # Format markdown text for ReportLab
             formatted_text = trip_plan.replace("\n", "<br/>")
             story.append(Paragraph(formatted_text, styles["BodyText"]))
-
-            # Build PDF safely
             doc.build(story)
 
-            st.success(
-                f"🎉 Trip plan saved locally as {filename_txt} and {filename_pdf}!"
-            )
+            with out_tab3:
+                st.markdown('<div class="custom-card">', unsafe_allow_html=True)
+                st.markdown("##### Download Generated Reports")
+                d_col1, d_col2 = st.columns(2)
 
-            # Downloads bar
-            st.subheader("📥 Export Your Itinerary")
-            d_col1, d_col2 = st.columns(2)
-
-            with d_col1:
-                st.download_button(
-                    label="📄 Download Text File (.txt)",
-                    data=trip_plan,
-                    file_name=filename_txt,
-                    mime="text/plain",
-                )
-
-            with d_col2:
-                with open(filename_pdf, "rb") as pdf_file:
+                with d_col1:
                     st.download_button(
-                        label="📕 Download PDF Document (.pdf)",
-                        data=pdf_file,
-                        file_name=filename_pdf,
-                        mime="application/pdf",
+                        label="📄 Download Raw Text Report (.txt)",
+                        data=trip_plan,
+                        file_name=filename_txt,
+                        mime="text/plain",
                     )
+
+                with d_col2:
+                    with open(filename_pdf, "rb") as pdf_file:
+                        st.download_button(
+                            label="📕 Download Executive PDF Document (.pdf)",
+                            data=pdf_file,
+                            file_name=filename_pdf,
+                            mime="application/pdf",
+                        )
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            st.balloons()
 
         except Exception as e:
             st.error(f"An error occurred while generating the itinerary: {e}")
