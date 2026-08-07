@@ -1,3 +1,4 @@
+import base64
 import io
 import os
 import smtplib
@@ -19,6 +20,7 @@ from reportlab.platypus import Image as RLImage, Paragraph, SimpleDocTemplate, S
 # Safe Import for Twilio to prevent crashes if missing from environment
 try:
     from twilio.rest import Client
+
     TWILIO_AVAILABLE = True
 except ImportError:
     TWILIO_AVAILABLE = False
@@ -33,6 +35,31 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+
+# Function to convert image to base64 string for CSS background
+def get_base64_of_bin_file(bin_file):
+    if os.path.exists(bin_file):
+        with open(bin_file, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    return None
+
+
+bg_base64 = get_base64_of_bin_file("bg.png")
+
+# Dynamic CSS for Full Page Background Image
+bg_css_rule = (
+    f"""
+    background-image: linear-gradient(rgba(9, 13, 22, 0.82), rgba(9, 13, 22, 0.92)), url('data:image/png;base64,{bg_base64}');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+"""
+    if bg_base64
+    else "background-color: #090d16;"
+)
+
+
 # ==========================================
 # 2. SIDEBAR CONFIGURATION & API SETTINGS
 # ==========================================
@@ -40,7 +67,12 @@ with st.sidebar:
     st.markdown("### 🎨 UI Color Theme")
     theme_choice = st.selectbox(
         "Choose Theme Style",
-        ["Midnight Executive", "Emerald Luxe", "Royal Amethyst", "Minimal Light"],
+        [
+            "Midnight Executive",
+            "Emerald Luxe",
+            "Royal Amethyst",
+            "Minimal Light",
+        ],
     )
 
     st.markdown("---")
@@ -48,7 +80,9 @@ with st.sidebar:
     st.caption("Enter enterprise keys below to enable LLM & search integration.")
 
     GOOGLE_API_KEY = st.text_input(
-        "Google Gemini API Key", type="password", help="Required for Gemini Model"
+        "Google Gemini API Key",
+        type="password",
+        help="Required for Gemini Model",
     )
     os.environ["GOOGLE_API_KEY"] = GOOGLE_API_KEY
 
@@ -58,7 +92,9 @@ with st.sidebar:
     OPENWEATHER_API_KEY = st.text_input("OpenWeather API Key", type="password")
     os.environ["OPENWEATHER_API_KEY"] = OPENWEATHER_API_KEY
 
-    GOOGLE_PLACES_API_KEY = st.text_input("Google Places API Key", type="password")
+    GOOGLE_PLACES_API_KEY = st.text_input(
+        "Google Places API Key", type="password"
+    )
     os.environ["GOOGLE_PLACES_API_KEY"] = GOOGLE_PLACES_API_KEY
 
     all_API = [
@@ -72,69 +108,86 @@ with st.sidebar:
     st.markdown("### 📬 Messaging API Credentials")
     st.caption("Required for Email & WhatsApp dispatch.")
 
-    SENDER_EMAIL = st.text_input("Sender Gmail Address", placeholder="company@gmail.com")
+    SENDER_EMAIL = st.text_input(
+        "Sender Gmail Address", placeholder="company@gmail.com"
+    )
     SENDER_PASSWORD = st.text_input("Gmail App Password", type="password")
 
     TWILIO_SID = st.text_input("Twilio Account SID", type="password")
     TWILIO_AUTH_TOKEN = st.text_input("Twilio Auth Token", type="password")
-    TWILIO_WHATSAPP_NUMBER = st.text_input("Twilio WhatsApp Number", placeholder="+14155238886")
+    TWILIO_WHATSAPP_NUMBER = st.text_input(
+        "Twilio WhatsApp Number", placeholder="+14155238886"
+    )
 
 
 # ==========================================
-# 3. DYNAMIC COLOR THEME ENGINE
+# 3. DYNAMIC COLOR THEME ENGINE WITH BG IMAGE
 # ==========================================
 THEMES = {
     "Midnight Executive": {
-        "bg": "#090d16",
-        "card_bg": "rgba(15, 23, 42, 0.7)",
+        "bg": bg_css_rule,
+        "card_bg": "rgba(15, 23, 42, 0.85)",
         "text": "#e2e8f0",
         "subtext": "#94a3b8",
-        "title_grad": "linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%)",
+        "title_grad": (
+            "linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%)"
+        ),
         "btn_grad": "linear-gradient(90deg, #0284c7 0%, #2563eb 100%)",
         "btn_hover": "linear-gradient(90deg, #0369a1 0%, #1d4ed8 100%)",
         "tab_active": "#0284c7",
-        "input_bg": "rgba(30, 41, 59, 0.5)",
-        "border": "rgba(255, 255, 255, 0.08)",
-        "sidebar_bg": "#0b0f19",
+        "input_bg": "rgba(30, 41, 59, 0.7)",
+        "border": "rgba(255, 255, 255, 0.12)",
+        "sidebar_bg": "rgba(11, 15, 25, 0.95)",
     },
     "Emerald Luxe": {
-        "bg": "#06140e",
-        "card_bg": "rgba(11, 33, 24, 0.75)",
+        "bg": bg_css_rule,
+        "card_bg": "rgba(11, 33, 24, 0.85)",
         "text": "#ecfdf5",
         "subtext": "#6ee7b7",
-        "title_grad": "linear-gradient(90deg, #34d399 0%, #a7f3d0 50%, #fef08a 100%)",
+        "title_grad": (
+            "linear-gradient(90deg, #34d399 0%, #a7f3d0 50%, #fef08a 100%)"
+        ),
         "btn_grad": "linear-gradient(90deg, #059669 0%, #10b981 100%)",
         "btn_hover": "linear-gradient(90deg, #047857 0%, #059669 100%)",
         "tab_active": "#059669",
-        "input_bg": "rgba(16, 185, 129, 0.1)",
-        "border": "rgba(52, 211, 153, 0.15)",
-        "sidebar_bg": "#030c08",
+        "input_bg": "rgba(16, 185, 129, 0.2)",
+        "border": "rgba(52, 211, 153, 0.2)",
+        "sidebar_bg": "rgba(3, 12, 8, 0.95)",
     },
     "Royal Amethyst": {
-        "bg": "#0f0c1b",
-        "card_bg": "rgba(28, 20, 50, 0.75)",
+        "bg": bg_css_rule,
+        "card_bg": "rgba(28, 20, 50, 0.85)",
         "text": "#f5f3ff",
         "subtext": "#c084fc",
-        "title_grad": "linear-gradient(90deg, #c084fc 0%, #f472b6 50%, #38bdf8 100%)",
+        "title_grad": (
+            "linear-gradient(90deg, #c084fc 0%, #f472b6 50%, #38bdf8 100%)"
+        ),
         "btn_grad": "linear-gradient(90deg, #7c3aed 0%, #9333ea 100%)",
         "btn_hover": "linear-gradient(90deg, #6d28d9 0%, #7e22ce 100%)",
         "tab_active": "#7c3aed",
-        "input_bg": "rgba(124, 58, 237, 0.15)",
-        "border": "rgba(192, 132, 252, 0.15)",
-        "sidebar_bg": "#0a0712",
+        "input_bg": "rgba(124, 58, 237, 0.2)",
+        "border": "rgba(192, 132, 252, 0.2)",
+        "sidebar_bg": "rgba(10, 7, 18, 0.95)",
     },
     "Minimal Light": {
-        "bg": "#f8fafc",
-        "card_bg": "#ffffff",
+        "bg": (
+            f"background-image: linear-gradient(rgba(248, 250, 252, 0.85),"
+            f" rgba(248, 250, 252, 0.92)),"
+            f" url('data:image/png;base64,{bg_base64}'); background-size:"
+            " cover; background-attachment: fixed;"
+            if bg_base64
+            else "background-color: #f8fafc;"
+        ),
+        "card_bg": "rgba(255, 255, 255, 0.92)",
         "text": "#0f172a",
         "subtext": "#475569",
         "title_grad": "linear-gradient(90deg, #0284c7 0%, #4f46e5 100%)",
         "btn_grad": "linear-gradient(90deg, #2563eb 0%, #3b82f6 100%)",
         "btn_hover": "linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)",
         "tab_active": "#2563eb",
-        "input_bg": "#f1f5f9",
-        "border": "rgba(15, 23, 42, 0.1)",
-        "sidebar_bg": "#f1f5f9",
+        "input_bg": "rgba(241, 245, 249, 0.9)",
+        "border": "rgba(15, 23, 42, 0.15)",
+        "sidebar_bg": "rgba(241, 245, 249, 0.95)",
     },
 }
 
@@ -144,7 +197,7 @@ st.markdown(
     f"""
 <style>
     .stApp {{
-        background-color: {active_theme['bg']};
+        {active_theme['bg']}
         color: {active_theme['text']};
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }}
@@ -235,19 +288,28 @@ def generate_ai_image(destination_name):
     return f"https://pollinations.ai/p/{encoded_prompt}?width=1200&height=675&seed=42&model=flux"
 
 
-def send_pdf_email(receiver_email, pdf_filepath, client_name, destination_name):
+def send_pdf_email(
+    receiver_email, pdf_filepath, client_name, destination_name
+):
     """Sends the generated PDF via Gmail SMTP."""
     msg = MIMEMultipart()
     msg["From"] = SENDER_EMAIL
     msg["To"] = receiver_email
     msg["Subject"] = f"✈️ Your Travel Itinerary for {destination_name}"
 
-    body = f"Hello {client_name},\n\nPlease find attached your personalized trip itinerary for {destination_name}.\n\nBon Voyage!\nAI Travel Team"
+    body = (
+        f"Hello {client_name},\n\nPlease find attached your personalized trip"
+        f" itinerary for {destination_name}.\n\nBon Voyage!\nAI Travel Team"
+    )
     msg.attach(MIMEText(body, "plain"))
 
     with open(pdf_filepath, "rb") as f:
         attachment = MIMEApplication(f.read(), _subtype="pdf")
-        attachment.add_header("Content-Disposition", "attachment", filename=os.path.basename(pdf_filepath))
+        attachment.add_header(
+            "Content-Disposition",
+            "attachment",
+            filename=os.path.basename(pdf_filepath),
+        )
         msg.attach(attachment)
 
     server = smtplib.SMTP("smtp.gmail.com", 587)
@@ -257,10 +319,15 @@ def send_pdf_email(receiver_email, pdf_filepath, client_name, destination_name):
     server.quit()
 
 
-def send_pdf_whatsapp(receiver_phone, pdf_url_or_media_id, client_name, destination_name):
+def send_pdf_whatsapp(
+    receiver_phone, pdf_url_or_media_id, client_name, destination_name
+):
     """Sends a WhatsApp text & PDF link via Twilio."""
     if not TWILIO_AVAILABLE:
-        raise ImportError("Twilio package is not installed in the system. Add 'twilio' to requirements.txt.")
+        raise ImportError(
+            "Twilio package is not installed in the system. Add 'twilio' to"
+            " requirements.txt."
+        )
 
     client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
@@ -269,11 +336,22 @@ def send_pdf_whatsapp(receiver_phone, pdf_url_or_media_id, client_name, destinat
 
     message = client.messages.create(
         from_=f"whatsapp:{TWILIO_WHATSAPP_NUMBER}",
-        body=f"Hello {client_name}! 🌟 Your customized travel itinerary for {destination_name} is ready. Download it here: {pdf_url_or_media_id}",
+        body=(
+            f"Hello {client_name}! 🌟 Your customized travel itinerary for"
+            f" {destination_name} is ready. Download it here:"
+            f" {pdf_url_or_media_id}"
+        ),
         to=f"whatsapp:{receiver_phone}",
     )
     return message.sid
 
+
+# Optional Top Banner Image if bg.png exists
+if os.path.exists("bg.png"):
+    try:
+        st.image("bg.png", use_container_width=True)
+    except Exception:
+        pass
 
 # ==========================================
 # 5. MAIN HEADER & FORM INTERFACE
@@ -288,7 +366,9 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-input_tab1, input_tab2 = st.tabs(["📌 Core Trip Parameters", "🎯 Personalization & Preferences"])
+input_tab1, input_tab2 = st.tabs(
+    ["📌 Core Trip Parameters", "🎯 Personalization & Preferences"]
+)
 
 with input_tab1:
     st.markdown('<div class="custom-card">', unsafe_allow_html=True)
@@ -298,7 +378,9 @@ with input_tab1:
     with col1:
         name = st.text_input("Client / Traveler Name", value="Alex")
         source = st.text_input("Departure City", placeholder="e.g., London, UK")
-        destination = st.text_input("Destination City", placeholder="e.g., Kyoto, Japan")
+        destination = st.text_input(
+            "Destination City", placeholder="e.g., Kyoto, Japan"
+        )
         travel_date = st.date_input("Departure Date")
 
     with col2:
@@ -317,7 +399,9 @@ with input_tab1:
                 "Arabic",
             ],
         )
-        budget = st.text_input("Budget Estimate", placeholder="e.g., $3,500 USD")
+        budget = st.text_input(
+            "Budget Estimate", placeholder="e.g., $3,500 USD"
+        )
         return_date = st.date_input("Return Date")
 
     c1, c2 = st.columns(2)
@@ -343,9 +427,17 @@ with input_tab2:
         )
         transport = st.selectbox(
             "Transit Preference",
-            ["Private Chauffeur/Taxi", "Public Transport", "Rental Car", "Walking"],
+            [
+                "Private Chauffeur/Taxi",
+                "Public Transport",
+                "Rental Car",
+                "Walking",
+            ],
         )
-        food = st.text_input("Dietary Preferences", placeholder="e.g., Fine Dining, Vegetarian, Local Street Food")
+        food = st.text_input(
+            "Dietary Preferences",
+            placeholder="e.g., Fine Dining, Vegetarian, Local Street Food",
+        )
 
     with col4:
         interests = st.multiselect(
@@ -414,14 +506,21 @@ Structure the itinerary:
 st.markdown("###")
 if st.button("🚀 Generate Itinerary"):
     if not all(all_API):
-        st.error("❌ Please fill in all required API credentials in the left sidebar.")
+        st.error(
+            "❌ Please fill in all required API credentials in the left"
+            " sidebar."
+        )
         st.stop()
 
     if not GOOGLE_API_KEY or not GOOGLE_API_KEY.startswith:
-        st.error("❌ Invalid GOOGLE_API_KEY format. Please check your credentials.")
+        st.error(
+            "❌ Invalid GOOGLE_API_KEY format. Please check your credentials."
+        )
         st.stop()
 
-    with st.spinner("⏳ Synthesizing itinerary and generating AI visual assets..."):
+    with st.spinner(
+        "⏳ Synthesizing itinerary and generating AI visual assets..."
+    ):
         try:
             model = ChatGoogleGenerativeAI(
                 model="gemini-3.5-flash",
@@ -449,7 +548,9 @@ if st.button("🚀 Generate Itinerary"):
                 "language": language,
             })
 
-            dest_query = destination if destination else "Luxury Travel Destination"
+            dest_query = (
+                destination if destination else "Luxury Travel Destination"
+            )
             image_url = generate_ai_image(dest_query)
 
             st.markdown("---")
@@ -457,11 +558,16 @@ if st.button("🚀 Generate Itinerary"):
             m1.metric(label="Passenger", value=name)
             m2.metric(label="Destination", value=dest_query)
             m3.metric(label="Duration", value=f"{days} Days")
-            m4.metric(label="Estimated Budget", value=budget if budget else "N/A")
-
-            out_tab1, out_tab2, out_tab3, out_tab4 = st.tabs(
-                ["🗓️ Full Itinerary", "🖼️ Destination Visual", "📥 Export Options", "✉️ Dispatch Report"]
+            m4.metric(
+                label="Estimated Budget", value=budget if budget else "N/A"
             )
+
+            out_tab1, out_tab2, out_tab3, out_tab4 = st.tabs([
+                "🗓️ Full Itinerary",
+                "🖼️ Destination Visual",
+                "📥 Export Options",
+                "✉️ Dispatch Report",
+            ])
 
             with out_tab1:
                 st.markdown('<div class="custom-card">', unsafe_allow_html=True)
@@ -487,7 +593,11 @@ if st.button("🚀 Generate Itinerary"):
             story = []
 
             try:
-                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+                headers = {
+                    "User-Agent": (
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                    )
+                }
                 response = requests.get(image_url, headers=headers, timeout=10)
 
                 if response.status_code == 200:
@@ -504,7 +614,11 @@ if st.button("🚀 Generate Itinerary"):
                     temp_img_path = "temp_ai_image.jpg"
                     pil_img.save(temp_img_path, format="JPEG")
 
-                    story.append(RLImage(temp_img_path, width=6.5 * inch, height=3.6 * inch))
+                    story.append(
+                        RLImage(
+                            temp_img_path, width=6.5 * inch, height=3.6 * inch
+                        )
+                    )
                     story.append(Spacer(1, 15))
             except Exception:
                 pass
@@ -539,43 +653,85 @@ if st.button("🚀 Generate Itinerary"):
             with out_tab4:
                 st.markdown('<div class="custom-card">', unsafe_allow_html=True)
                 st.markdown("##### 🚀 Direct Client Delivery")
-                
+
                 e_col1, e_col2 = st.columns(2)
 
                 with e_col1:
                     st.markdown("###### 📧 Send via Email")
-                    recipient_email = st.text_input("Client Email Address", placeholder="client@example.com")
+                    recipient_email = st.text_input(
+                        "Client Email Address", placeholder="client@example.com"
+                    )
                     if st.button("Send Email PDF"):
                         if not SENDER_EMAIL or not SENDER_PASSWORD:
-                            st.error("❌ Sender Gmail credentials missing in Sidebar!")
+                            st.error(
+                                "❌ Sender Gmail credentials missing in"
+                                " Sidebar!"
+                            )
                         elif not recipient_email:
                             st.error("❌ Please provide a client email address.")
                         else:
                             try:
-                                send_pdf_email(recipient_email, filename_pdf, name, dest_query)
-                                st.success(f"✅ Itinerary PDF successfully emailed to {recipient_email}!")
+                                send_pdf_email(
+                                    recipient_email,
+                                    filename_pdf,
+                                    name,
+                                    dest_query,
+                                )
+                                st.success(
+                                    "✅ Itinerary PDF successfully emailed to"
+                                    f" {recipient_email}!"
+                                )
                             except Exception as email_err:
                                 st.error(f"Failed to send email: {email_err}")
 
                 with e_col2:
                     st.markdown("###### 💬 Send via WhatsApp")
                     if not TWILIO_AVAILABLE:
-                        st.warning("⚠️ Twilio package is not installed. Please add `twilio` to your `requirements.txt` file.")
-                    recipient_phone = st.text_input("Client Phone (+CountryCode)", placeholder="+1234567890")
-                    pdf_public_url = st.text_input("Hosted PDF URL (Optional)", placeholder="https://yourserver.com/itinerary.pdf")
-                    
+                        st.warning(
+                            "⚠️ Twilio package is not installed. Please add"
+                            " `twilio` to your `requirements.txt` file."
+                        )
+                    recipient_phone = st.text_input(
+                        "Client Phone (+CountryCode)",
+                        placeholder="+1234567890",
+                    )
+                    pdf_public_url = st.text_input(
+                        "Hosted PDF URL (Optional)",
+                        placeholder="https://yourserver.com/itinerary.pdf",
+                    )
+
                     if st.button("Send WhatsApp Message"):
-                        if not TWILIO_SID or not TWILIO_AUTH_TOKEN or not TWILIO_WHATSAPP_NUMBER:
-                            st.error("❌ Twilio API credentials missing in Sidebar!")
+                        if (
+                            not TWILIO_SID
+                            or not TWILIO_AUTH_TOKEN
+                            or not TWILIO_WHATSAPP_NUMBER
+                        ):
+                            st.error(
+                                "❌ Twilio API credentials missing in Sidebar!"
+                            )
                         elif not recipient_phone:
                             st.error("❌ Please provide a phone number.")
                         else:
                             try:
-                                link_to_send = pdf_public_url if pdf_public_url else image_url
-                                sid = send_pdf_whatsapp(recipient_phone, link_to_send, name, dest_query)
-                                st.success(f"✅ WhatsApp message sent! (Twilio SID: {sid})")
+                                link_to_send = (
+                                    pdf_public_url
+                                    if pdf_public_url
+                                    else image_url
+                                )
+                                sid = send_pdf_whatsapp(
+                                    recipient_phone,
+                                    link_to_send,
+                                    name,
+                                    dest_query,
+                                )
+                                st.success(
+                                    "✅ WhatsApp message sent! (Twilio SID:"
+                                    f" {sid})"
+                                )
                             except Exception as wa_err:
-                                st.error(f"Failed to send WhatsApp message: {wa_err}")
+                                st.error(
+                                    f"Failed to send WhatsApp message: {wa_err}"
+                                )
 
                 st.markdown("</div>", unsafe_allow_html=True)
 
